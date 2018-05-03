@@ -1,0 +1,29 @@
+<project name="CORAM3P" default="compile">
+
+  <target name="init" >
+    <mkdir dir="bin" />
+  </target>
+
+  <target name="compile" depends="init" >
+    <javac srcdir="src:test:ObliVMGC" destdir="bin" debug="on" debuglevel="lines,vars,source" source="1.8" includeantruntime="false">
+      <classpath>
+      	<pathelement location="lib/argparse4j-0.1.0.jar"/>
+        <pathelement location="lib/bcprov-jdk15on-151.jar"/>
+        <pathelement location="lib/commons-cli-1.2.jar"/>
+        <pathelement location="lib/commons-io-2.4.jar"/>
+        <pathelement location="lib/commons-lang3-3.3.2.jar"/>
+        <pathelement location="lib/jargs.jar"/>
+        <pathelement location="lib/junit-4.10.jar"/>
+        <pathelement location="lib/oblivm-flexsc-0.2.jar"/>
+        <pathelement location="lib/org.hamcrest.core_1.3.0.v201303031735.jar"/>
+        <pathelement location="lib/snakeyaml-1.11.jar"/>
+        <pathelement path="bin"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="clean" depends="init" >
+    <delete dir="bin" />
+  </target>
+
+</project>
