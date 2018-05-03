@@ -6,6 +6,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 public class Crypto {
+	public static final int prgSeedBits = 128;
+	public static final int prgSeedBytes = (prgSeedBits + 7) / 8;
+
 	public static SecureRandom sr;
 	public static SecureRandom sr_DE;
 	public static SecureRandom sr_CE;
