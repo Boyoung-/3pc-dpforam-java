@@ -1,4 +1,4 @@
-<project name="CORAM3P" default="compile">
+<project name="DORAM3PC" default="compile">
 
   <target name="init" >
     <mkdir dir="bin" />
