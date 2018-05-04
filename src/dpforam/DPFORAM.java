@@ -25,11 +25,11 @@ public class DPFORAM {
 	public final boolean isFirst;
 	public final boolean isLast;
 
-	private long stashCtr;
 	private Array64<byte[]> ROM;
 	private Array64<byte[]> WOM;
 	private Array64<byte[]> stash;
 	private DPFORAM posMap;
+	private long stashCtr;
 
 	public DPFORAM(int tau, int logN, int DBytes, boolean isLast) {
 		this.tau = tau;
@@ -42,7 +42,6 @@ public class DPFORAM {
 		nextLogNBytes = (nextLogN + 7) / 8;
 		this.DBytes = isLast ? DBytes : nextLogNBytes * ttp;
 		N = (long) Math.pow(2, logN);
-		// stashCtr = 1;
 		isFirst = logN - tau < tau;
 
 		ROM = new Array64<byte[]>(N);
@@ -56,7 +55,7 @@ public class DPFORAM {
 	}
 
 	private void init() {
-		stashCtr = 1;
+		initCtr();
 
 		if (isLast) {
 			initRWOM(ROM);
@@ -87,6 +86,10 @@ public class DPFORAM {
 		for (long i = 0; i < mem.size(); i++) {
 			mem.set(i, new byte[DBytes]);
 		}
+	}
+
+	private void initCtr() {
+		stashCtr = 1;
 	}
 
 	private void WOMtoROM() {
@@ -126,7 +129,7 @@ public class DPFORAM {
 		if (stashCtr == N) {
 			WOMtoROM();
 			initEmpty(stash);
-			stashCtr = 1;
+			initCtr();
 			posMap.init();
 		}
 
