@@ -22,19 +22,17 @@ import exceptions.IllegalInputException;
 public class PRG {
 	private Cipher cipher;
 	private SecretKeySpec skey;
-	private int l; // output bit length
 
-	public PRG(int l) {
+	public PRG() {
 		try {
 			cipher = Cipher.getInstance("AES/CTR/NoPadding");
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
 			e.printStackTrace();
 		}
 		readKey();
-		this.l = l;
 	}
 
-	public synchronized byte[] compute(byte[] seed) {
+	public synchronized byte[] compute(byte[] seed, int outBytes) {
 		byte[] input;
 		if (seed.length > 16) {
 			throw new IllegalInputException(seed.length + " > 16");
@@ -46,7 +44,7 @@ public class PRG {
 		}
 
 		IvParameterSpec IV = new IvParameterSpec(input);
-		byte[] msg = new byte[(l + 7) / 8];
+		byte[] msg = new byte[outBytes];
 		byte[] output = null;
 
 		try {
