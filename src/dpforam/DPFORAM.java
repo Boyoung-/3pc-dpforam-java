@@ -126,7 +126,8 @@ public class DPFORAM {
 		if (stashCtr == N) {
 			WOMtoROM();
 			initEmpty(stash);
-			init();
+			stashCtr = 1;
+			posMap.init();
 		}
 
 		return rec;
@@ -169,7 +170,7 @@ public class DPFORAM {
 	}
 
 	public static void main(String[] args) {
-		DPFORAM dpforam = new DPFORAM(3, 6, 4, true);
+		DPFORAM dpforam = new DPFORAM(3, 12, 4, true);
 		dpforam.printMetadata();
 
 		Set<Long> tested = new HashSet<Long>();
@@ -178,17 +179,16 @@ public class DPFORAM {
 			while (tested.contains(addr))
 				addr = Util.nextLong(dpforam.N, Crypto.sr);
 			tested.add(addr);
-			addr = 0; //////
 
 			long expected = addr % prime;
 			for (int i = 0; i < 1000; i++) {
-				// int newVal = Crypto.sr.nextInt(prime);
-				byte[] rec = dpforam.access(addr, Util.padArray(BigInteger.valueOf(i).toByteArray(), dpforam.DBytes),
-						false);
+				int newVal = Crypto.sr.nextInt(prime);
+				byte[] rec = dpforam.access(addr,
+						Util.padArray(BigInteger.valueOf(newVal).toByteArray(), dpforam.DBytes), false);
 				long output = new BigInteger(1, rec).longValue();
 				if (output != expected)
 					System.err.println("ERROR: " + t + " " + addr + " " + i);
-				expected = i;// newVal;
+				expected = newVal;
 			}
 		}
 	}
