@@ -177,7 +177,7 @@ public class DPFORAMLocal {
 		dpforam.printMetadata();
 
 		Set<Long> tested = new HashSet<Long>();
-		for (int t = 0; t < 1; t++) {
+		for (int t = 0; t < 100; t++) {
 			long addr = Util.nextLong(dpforam.N, Crypto.sr);
 			while (tested.contains(addr))
 				addr = Util.nextLong(dpforam.N, Crypto.sr);

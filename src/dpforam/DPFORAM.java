@@ -9,12 +9,17 @@ import org.bouncycastle.util.Arrays;
 import communication.Communication;
 import crypto.Crypto;
 import struct.Party;
+import subprotocols.InsLbl;
 import util.Array64;
 import util.Util;
+
+// TODO: measure bandwidth
 
 public class DPFORAM {
 
 	public static final int prime = 251;
+	
+	public static final FSS fss = new FSS(Crypto.prgSeedBytes);
 
 	public final int logN;
 	public final int logNBytes;
@@ -177,12 +182,70 @@ public class DPFORAM {
 //		return rec;
 //	}
 //
-//	private byte[] accessFirstAndLast(long addr, byte[] newRec, boolean isRead) {
+	
+	// TODO: change below to private
+	public byte[] accessFirstAndLast(long addr, byte[] newRec_13, boolean isRead) {
 //		byte[] rec = ROM.get(addr).clone();
+		FSSKey[] keys = fss.Gen(addr, logN, new byte[DBytes]);
+		cons[0].write(keys[0]);
+		cons[1].write(keys[1]);
+		keys[1] = (FSSKey) cons[0].readObject();
+		keys[0] = (FSSKey) cons[1].readObject();
+		byte[] rec_13 = new byte[DBytes];
+		@SuppressWarnings("unchecked")
+		Array64<byte[][]>[] fssOut = (Array64<byte[][]>[]) new Array64[] {new Array64<byte[][]>(N), new Array64<byte[][]>(N)};
+		for (int i=0; i<2; i++) {
+			for (long j=0; j<N; j++) {
+				fssOut[i].set(j, fss.Eval(keys[i], j, logN));
+				if (fssOut[i].get(j)[1][0] == 1) {
+					Util.setXor(rec_13, ROM[i].get(j));
+				}
+			}
+		}
+		
 //		newRec = isRead ? rec : newRec;
+		byte[] delta_13 = isRead ? new byte[DBytes] : Util.xor(rec_13, newRec_13);
+		
 //		ROM.set(addr, newRec.clone());
+		InsLbl inslbl = null;
+		byte[][] rom = new byte[2][];
+		int romBytes = (int) N * DBytes;
+		if (party == Party.Eddie) {
+			Util.setXor(delta_13, cons[1].read());
+			inslbl = new InsLbl(cons[0], cons[1], Crypto.sr_DE, Crypto.sr_CE);
+			inslbl.runP1((int) addr, delta_13, (int) N);
+			
+			rom[0] = Util.nextBytes(romBytes, Crypto.sr_DE);
+			rom[1] = Util.nextBytes(romBytes, Crypto.sr_CE);
+		} else if (party == Party.Debbie) {
+			inslbl = new InsLbl(cons[1], cons[0], Crypto.sr_DE, Crypto.sr_CD);
+			byte[] rom_12 = inslbl.runP2(0, delta_13, (int) N);
+			
+			rom[1] = Util.nextBytes(romBytes, Crypto.sr_DE);
+			rom[0] = Util.xor(rom_12, rom[1]);
+			cons[0].write(rom[0]);
+			Util.setXor(rom[0], cons[0].read());
+		} else if (party == Party.Charlie) {
+			cons[0].write(delta_13);
+			inslbl = new InsLbl(cons[0], cons[1], Crypto.sr_CE, Crypto.sr_CD);
+			byte[] rom_12 = inslbl.runP3((int) N, DBytes);
+			
+			rom[0] = Util.nextBytes(romBytes, Crypto.sr_CE);
+			rom[1] = Util.xor(rom_12, rom[0]);
+			cons[1].write(rom[1]);
+			Util.setXor(rom[1], cons[1].read());
+		} else {
+		}
+		
+		for (int i=0; i<2; i++) {
+			for (long j=0; j<N; j++) {
+				Util.setXor(ROM[i].get(j), Arrays.copyOfRange(rom[i], (int) j * DBytes, (int) (j+1) * DBytes));
+			}
+		}
+		
 //		return rec;
-//	}
+		return rec_13;
+	}
 
 	public void printMetadata() {
 		System.out.println("===================");
@@ -214,7 +277,7 @@ public class DPFORAM {
 //		dpforam.printMetadata();
 //
 //		Set<Long> tested = new HashSet<Long>();
-//		for (int t = 0; t < 1; t++) {
+//		for (int t = 0; t < 100; t++) {
 //			long addr = Util.nextLong(dpforam.N, Crypto.sr);
 //			while (tested.contains(addr))
 //				addr = Util.nextLong(dpforam.N, Crypto.sr);

@@ -52,9 +52,9 @@ public class CLI {
 
 		String eddieIp = cmd.getOptionValue("eddie_ip", DEFAULT_IP);
 		String debbieIp = cmd.getOptionValue("debbie_ip", DEFAULT_IP);
-		
+
 		int tau = 3;
-		int logN = 12;
+		int logN = 3;
 		int DBytes = 4;
 
 		// For now all logic happens here. Eventually this will get wrapped
@@ -79,8 +79,8 @@ public class CLI {
 
 			con1.setTcpNoDelay(true);
 			con2.setTcpNoDelay(true);
-			
-			RunORAM.run(tau, logN, DBytes, Party.Eddie, new Communication[] {con1, con2});
+
+			RunORAM.run(tau, logN, DBytes, Party.Eddie, new Communication[] { con1, con2 });
 
 		} else if (party.equals("debbie")) {
 			System.out.print("Waiting to establish eddie connections...");
@@ -100,8 +100,8 @@ public class CLI {
 
 			con1.setTcpNoDelay(true);
 			con2.setTcpNoDelay(true);
-			
-			RunORAM.run(tau, logN, DBytes, Party.Debbie, new Communication[] {con2, con1});
+
+			RunORAM.run(tau, logN, DBytes, Party.Debbie, new Communication[] { con2, con1 });
 
 		} else if (party.equals("charlie")) {
 			System.out.print("Waiting to establish eddie connections...");
@@ -122,13 +122,13 @@ public class CLI {
 
 			con1.setTcpNoDelay(true);
 			con2.setTcpNoDelay(true);
-			
-			RunORAM.run(tau, logN, DBytes, Party.Charlie, new Communication[] {con1, con2});
+
+			RunORAM.run(tau, logN, DBytes, Party.Charlie, new Communication[] { con1, con2 });
 
 		} else {
 			throw new NoSuchPartyException(party);
 		}
-		
+
 		//////////////////////////////////////////////////////////////
 
 		try {
