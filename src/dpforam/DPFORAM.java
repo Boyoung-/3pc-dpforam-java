@@ -1,8 +1,6 @@
 package dpforam;
 
 import java.math.BigInteger;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.bouncycastle.util.Arrays;
 
@@ -13,7 +11,7 @@ import subprotocols.InsLbl;
 import util.Array64;
 import util.Util;
 
-// TODO: measure bandwidth
+// TODO: measure bandwidth, check clone()
 
 public class DPFORAM {
 
@@ -133,36 +131,103 @@ public class DPFORAM {
 		stashCtr = 1;
 	}
 
-//	private void WOMtoROM() {
-//		if (isFirst)
-//			return;
-//
-//		for (long i = 0; i < N; i++) {
-//			ROM.set(i, WOM.get(i).clone());
-//		}
-//	}
+	// TODO: customize serialization of Array64<byte[]>
+	@SuppressWarnings("unchecked")
+	private void WOMtoROM() {
+		if (isFirst)
+			return;
 
-//	public byte[] access(long addr, byte[] newRec, boolean isRead) {
-//		assert (newRec.length == (isLast ? DBytes : nextLogNBytes));
-//
-//		if (isFirst && isLast)
-//			return accessFirstAndLast(addr, newRec, isRead);
-//
-//		int mask = (1 << tau) - 1;
-//		long addrPre = isLast ? addr : (addr >>> tau);
-//		int addrSuf = isLast ? 0 : ((int) addr & mask);
-//		if (isFirst) {
-//			return accessFirst(addrPre, addrSuf, newRec);
-//		}
-//
-//		byte[] newPos = Util.padArray(BigInteger.valueOf(stashCtr).toByteArray(), logNBytes);
-//		byte[] pos = posMap.access(addrPre, newPos, false);
-//		long stashAddrPre = new BigInteger(1, pos).longValue();
-//		byte[] block = (stashAddrPre == 0) ? ROM.get(addrPre).clone() : stash.get(stashAddrPre).clone();
-//		byte[] rec = Arrays.copyOfRange(block, addrSuf * newRec.length, (addrSuf + 1) * newRec.length);
-//		newRec = isRead ? rec : newRec;
-//		System.arraycopy(newRec, 0, block, addrSuf * newRec.length, newRec.length);
-//
+		for (long i = 0; i < N; i++) {
+			ROM[0].set(i, WOM.get(i).clone());
+		}
+		cons[0].write(WOM);
+		ROM[1] = (Array64<byte[]>) cons[1].readObject();
+	}
+
+	public byte[] access(long addr, byte[] newRec_13, boolean isRead) {
+		assert (newRec_13.length == (isLast ? DBytes : nextLogNBytes));
+
+		if (isFirst && isLast)
+			return accessFirstAndLast(addr, newRec_13, isRead);
+
+		int mask = (1 << tau) - 1;
+		long addrPre = isLast ? addr : (addr >>> tau);
+		int addrSuf = isLast ? 0 : ((int) addr & mask);
+		if (isFirst) {
+			return accessFirst(addrPre, addrSuf, newRec_13);
+		}
+
+		byte[] newPos = Util.padArray(BigInteger.valueOf(stashCtr).toByteArray(), logNBytes);
+		byte[] pos_13 = posMap.access(addrPre, newPos, false);
+		
+		// TODO: access on addr sharing
+		cons[0].write(pos_13);
+		cons[1].write(pos_13);
+		byte[] pos = pos_13.clone();
+		Util.setXor(pos, cons[0].read());
+		Util.setXor(pos, cons[1].read());
+		
+		long stashAddrPre = new BigInteger(1, pos).longValue();
+		//byte[] block = (stashAddrPre == 0) ? ROM.get(addrPre).clone() : stash.get(stashAddrPre).clone();
+		PIROut romPirOut = blockPIR(addrPre);
+		PIROut stashPirOut = blockPIR(stashAddrPre);
+		// TODO: 3pc selection
+		byte[] block_13 = (stashAddrPre == 0) ? romPirOut.rec_13 : stashPirOut.rec_13;
+		
+		if (isLast) {
+			newRec_13 = isRead ? block_13 : newRec_13;
+			byte[][] newBlock_23 = new byte[2][];
+			newBlock_23[0] = newRec_13;
+			cons[0].write(newBlock_23[0]);
+			newBlock_23[1] = cons[1].read();
+			
+			// TODO: PIW
+			WOM.set(addrPre, newBlock_23[0].clone());
+			stash[0].set(stashCtr, newBlock_23[0]);
+			stash[1].set(stashCtr, newBlock_23[1]);
+			stashCtr++;
+
+			if (stashCtr == N) {
+				WOMtoROM();
+				initEmpty(stash[0]);
+				initEmpty(stash[1]);
+				initCtr();
+				posMap.init();
+			}
+			
+			return block_13;
+		}
+		
+		byte[][] block_23 = new byte[2][];
+		block_23[0] = block_13;
+		cons[0].write(block_23[0]);
+		block_23[1] = cons[1].read();
+		// TODO: pir on shared idx
+		PIROut ptrPirOut = ptrPIR(addrSuf, block_23);
+		byte[] ptr_13 = ptrPirOut.rec_13;
+		// TODO: secret-shared isRead
+		byte[] ptrDelta_13 = isRead? new byte[nextLogNBytes] : Util.xor(ptr_13, newRec_13);
+		byte[][] newBlock_23 = updateBlockOrPtr_23(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
+		
+		//byte[] rec = Arrays.copyOfRange(block, addrSuf * newRec.length, (addrSuf + 1) * newRec.length);
+		//newRec = isRead ? rec : newRec;
+		//System.arraycopy(newRec, 0, block, addrSuf * newRec.length, newRec.length);
+		
+		WOM.set(addrPre, newBlock_23[0].clone());
+		stash[0].set(stashCtr, newBlock_23[0]);
+		stash[1].set(stashCtr, newBlock_23[1]);
+		stashCtr++;
+
+		if (stashCtr == N) {
+			WOMtoROM();
+			initEmpty(stash[0]);
+			initEmpty(stash[1]);
+			initCtr();
+			posMap.init();
+		}
+		
+		return ptr_13;
+
 //		WOM.set(addrPre, block);
 //		stash.set(stashCtr, block.clone());
 //		stashCtr++;
@@ -175,8 +240,8 @@ public class DPFORAM {
 //		}
 //
 //		return rec;
-//	}
-//
+	}
+
 	
 	// TODO: clean InsLbl, change below to private
 	public byte[] accessFirst(long addrPre, int addrSuf, byte[] newPtr_13) {
@@ -248,7 +313,7 @@ public class DPFORAM {
 		return new PIROut(fssOut, rec_13);
 	}
 	
-	private PIROut ptrPIR(int idx, byte[][] block) {
+	private PIROut ptrPIR(int idx, byte[][] block_23) {
 		FSSKey[] keys = fss.Gen(idx, tau, new byte[nextLogNBytes]);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
@@ -261,7 +326,7 @@ public class DPFORAM {
 			for (int j=0; j<ttp; j++) {
 				fssOut[i].set(j, fss.Eval(keys[i], j, tau));
 				if (fssOut[i].get(j)[1][0] == 1) {
-					Util.setXor(rec_13, Arrays.copyOfRange(block[i], j*nextLogNBytes, (j+1)*nextLogNBytes));
+					Util.setXor(rec_13, Arrays.copyOfRange(block_23[i], j*nextLogNBytes, (j+1)*nextLogNBytes));
 				}
 			}
 		}
