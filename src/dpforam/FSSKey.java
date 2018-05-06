@@ -6,7 +6,7 @@ import java.io.Serializable;
 
 public class FSSKey implements Serializable {
 	private static final long serialVersionUID = 4522976008505295658L;
-	
+
 	public byte[] s;
 	public byte t;
 	public byte[][] sigma;

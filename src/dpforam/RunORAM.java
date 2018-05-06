@@ -8,7 +8,7 @@ import struct.Party;
 import util.Util;
 
 public class RunORAM {
-	
+
 	public static void testAccess(Party party, Communication[] cons) {
 		DPFORAM dpforam = new DPFORAM(3, 9, 4, true, party, cons);
 		dpforam.printMetadata();
@@ -38,8 +38,7 @@ public class RunORAM {
 				} else {
 				}
 
-				byte[] rec_13 = dpforam.access(addr,
-						Util.padArray(newVal.toByteArray(), dpforam.DBytes), false);
+				byte[] rec_13 = dpforam.access(addr, Util.padArray(newVal.toByteArray(), dpforam.DBytes), false);
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -49,7 +48,7 @@ public class RunORAM {
 						System.err.println("ERROR: " + t + " " + addr + " " + i);
 					else
 						System.out.println("Passed: " + t + " " + addr + " " + i);
-					
+
 					expected = newVal;
 
 				} else if (party == Party.Debbie) {
