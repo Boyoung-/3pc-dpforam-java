@@ -1,17 +1,11 @@
 package util;
 
-import java.io.Serializable;
+public class Array64<T> {
 
-public class Array64<T> implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private final int CHUNK_SIZE = 1024 * 1024 * 1024;
+	private final int CHUNK_SIZE = 1024 * 1024;
 
 	private long size;
-	private T[][] data;
+	public T[][] data;
 
 	@SuppressWarnings("unchecked")
 	public Array64(long s) {
@@ -25,8 +19,22 @@ public class Array64<T> implements Serializable {
 			data[chunks] = (T[]) new Object[remainder];
 	}
 
+	@SuppressWarnings("unchecked")
+	public Array64(long size, Object[][] data) {
+		this.size = size;
+		this.data = (T[][]) data;
+	}
+
 	public long size() {
 		return size;
+	}
+
+	public int numChunks() {
+		return data.length;
+	}
+
+	public T[] getChunk(int i) {
+		return data[i];
 	}
 
 	public T get(long index) {

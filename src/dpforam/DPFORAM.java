@@ -128,8 +128,6 @@ public class DPFORAM {
 		stashCtr = 1;
 	}
 
-	// TODO: customize serialization of Array64<byte[]>
-	@SuppressWarnings("unchecked")
 	private void WOMtoROM() {
 		if (isFirst)
 			return;
@@ -138,7 +136,7 @@ public class DPFORAM {
 			ROM[0].set(i, WOM.get(i).clone());
 		}
 		cons[0].write(WOM);
-		ROM[1] = (Array64<byte[]>) cons[1].readObject();
+		ROM[1] = cons[1].readArray64ByteArray();
 	}
 
 	public byte[] access(long addr, byte[] newRec_13, boolean isRead) {

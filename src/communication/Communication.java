@@ -23,6 +23,7 @@ import crypto.SimpleAES;
 import oram.Bucket;
 import oram.Global;
 import oram.Tuple;
+import util.Array64;
 import util.Bandwidth;
 import util.StopWatch;
 import util.Util;
@@ -361,6 +362,16 @@ public class Communication {
 		write(bandwidth, SerializationUtils.serialize((Serializable) out));
 	}
 
+	public void write(Array64<byte[]> array) {
+		write(array.size());
+		int len = array.numChunks();
+		write(len);
+		for (int i = 0; i < len; i++) {
+			Object[] b = array.getChunk(i);
+			write(b);
+		}
+	}
+
 	public void write(BigInteger b) {
 		write(b.toByteArray());
 	}
@@ -593,6 +604,15 @@ public class Communication {
 	public <T> T readObjectAndDec() {
 		T object = SerializationUtils.deserialize(readAndDec());
 		return object;
+	}
+
+	public Array64<byte[]> readArray64ByteArray() {
+		long size = readLong();
+		int len = readInt();
+		Object[][] data = new Object[len][];
+		for (int i = 0; i < len; i++)
+			data[i] = this.readObject();
+		return new Array64<byte[]>(size, data);
 	}
 
 	public BigInteger readBigInteger() {
