@@ -63,8 +63,11 @@ public class CLI {
 
 		Communication con1 = new Communication();
 		Communication con2 = new Communication();
+		Party partyEnum;
 
 		if (party.equals("eddie")) {
+			partyEnum = Party.Eddie;
+
 			System.out.print("Waiting to establish debbie connections...");
 			con1.start(eddiePort1);
 			while (con1.getState() != Communication.STATE_CONNECTED)
@@ -77,33 +80,27 @@ public class CLI {
 				;
 			System.out.println(" done!");
 
-			con1.setTcpNoDelay(true);
-			con2.setTcpNoDelay(true);
-
-			RunORAM.run(tau, logN, DBytes, Party.Eddie, new Communication[] { con1, con2 });
-
 		} else if (party.equals("debbie")) {
+			partyEnum = Party.Debbie;
+
 			System.out.print("Waiting to establish eddie connections...");
 			InetSocketAddress addr = new InetSocketAddress(eddieIp, eddiePort1);
-			con1.connect(addr);
-			while (con1.getState() != Communication.STATE_CONNECTED)
-				;
-
-			System.out.println(" done!");
-
-			System.out.print("Waiting to establish charlie connections...");
-			con2.start(debbiePort);
+			con2.connect(addr);
 			while (con2.getState() != Communication.STATE_CONNECTED)
 				;
 
 			System.out.println(" done!");
 
-			con1.setTcpNoDelay(true);
-			con2.setTcpNoDelay(true);
+			System.out.print("Waiting to establish charlie connections...");
+			con1.start(debbiePort);
+			while (con1.getState() != Communication.STATE_CONNECTED)
+				;
 
-			RunORAM.run(tau, logN, DBytes, Party.Debbie, new Communication[] { con2, con1 });
+			System.out.println(" done!");
 
 		} else if (party.equals("charlie")) {
+			partyEnum = Party.Charlie;
+
 			System.out.print("Waiting to establish eddie connections...");
 			InetSocketAddress addr = new InetSocketAddress(eddieIp, eddiePort2);
 			con1.connect(addr);
@@ -120,14 +117,14 @@ public class CLI {
 
 			System.out.println(" done!");
 
-			con1.setTcpNoDelay(true);
-			con2.setTcpNoDelay(true);
-
-			RunORAM.run(tau, logN, DBytes, Party.Charlie, new Communication[] { con1, con2 });
-
 		} else {
 			throw new NoSuchPartyException(party);
 		}
+
+		con1.setTcpNoDelay(true);
+		con2.setTcpNoDelay(true);
+
+		RunORAM.testAccessFirst(partyEnum, new Communication[] { con1, con2 });
 
 		//////////////////////////////////////////////////////////////
 
