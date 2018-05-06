@@ -11,10 +11,10 @@ public class RunORAM {
 	
 	public static void testAccess(Party party, Communication[] cons) {
 		DPFORAM dpforam = new DPFORAM(3, 9, 4, true, party, cons);
-		dpforam.printMetadata();
+		//dpforam.printMetadata();
 
 		for (int t = 0; t < 1; t++) {
-			long addr = Util.nextLong(dpforam.N, Crypto.sr);
+			long addr = 1;//Util.nextLong(dpforam.N, Crypto.sr);
 			if (party == Party.Eddie) {
 				cons[0].write(addr);
 				cons[1].write(addr);
@@ -29,7 +29,7 @@ public class RunORAM {
 //			int addrSuf = ((int) addr & mask);
 
 			BigInteger expected = BigInteger.valueOf(addr % DPFORAM.prime);
-			for (int i = 0; i < 100; i++) {
+			for (int i = 0; i < 10; i++) {
 				BigInteger newVal = BigInteger.valueOf(Crypto.sr.nextInt(DPFORAM.prime));
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -52,6 +52,8 @@ public class RunORAM {
 						System.err.println("ERROR: " + t + " " + addr + " " + i);
 					else
 						System.out.println("Passed: " + t + " " + addr + " " + i);
+					System.out.println();
+					
 					//expected = newVal;
 
 				} else if (party == Party.Debbie) {
