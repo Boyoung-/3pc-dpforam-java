@@ -139,6 +139,7 @@ public class DPFORAM {
 		ROM[1] = cons[1].readArray64ByteArray();
 	}
 
+	// TODO: secret-shared isRead??
 	public byte[] access(long addr, byte[] newRec_13, boolean isRead) {
 		assert (newRec_13.length == (isLast ? DBytes : nextLogNBytes));
 
@@ -170,25 +171,8 @@ public class DPFORAM {
 
 		if (isLast) {
 			byte[] deltaNewBlock_13 = isRead ? new byte[DBytes] : Util.xor(block_13, newRec_13);
-			newRec_13 = Util.xor(block_13, deltaNewBlock_13);
-			byte[][] newBlock_23 = new byte[2][];
-			newBlock_23[0] = newRec_13;
-			cons[0].write(newBlock_23[0]);
-			newBlock_23[1] = cons[1].read();
 
-			// TODO: PIW
-			Util.setXor(WOM.get(addrPre), deltaNewBlock_13);
-			stash[0].set(stashCtr, newBlock_23[0]);
-			stash[1].set(stashCtr, newBlock_23[1]);
-			stashCtr++;
-
-			if (stashCtr == N) {
-				WOMtoROM();
-				initEmpty(stash[0]);
-				initEmpty(stash[1]);
-				initCtr();
-				posMap.init();
-			}
+			updateStashAndWOM(block_13, deltaNewBlock_13, addrPre);
 
 			return block_13;
 		}
@@ -201,10 +185,15 @@ public class DPFORAM {
 		PIROut ptrPirOut = ptrPIR(addrSuf, block_23);
 		byte[] ptr_13 = ptrPirOut.rec_13;
 
-		// TODO: secret-shared isRead
 		byte[] ptrDelta_13 = isRead ? (new byte[nextLogNBytes]) : Util.xor(ptr_13, newRec_13);
+		byte[] deltaNewBlock_13 = genBlockOrArrayDelta_13(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
 
-		byte[] deltaNewBlock_13 = updateBlockOrPtr_13(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
+		updateStashAndWOM(block_13, deltaNewBlock_13, addrPre);
+
+		return ptr_13;
+	}
+
+	private void updateStashAndWOM(byte[] block_13, byte[] deltaNewBlock_13, long addrPre) {
 		byte[] newBlock_13 = Util.xor(block_13, deltaNewBlock_13);
 		byte[][] newBlock_23 = new byte[2][];
 		newBlock_23[0] = newBlock_13;
@@ -224,8 +213,6 @@ public class DPFORAM {
 			initCtr();
 			posMap.init();
 		}
-
-		return ptr_13;
 	}
 
 	// TODO: clean InsLbl, change below to private
@@ -240,8 +227,8 @@ public class DPFORAM {
 		byte[] ptr_13 = ptrPirOut.rec_13;
 		byte[] deltaPtr_13 = Util.xor(ptr_13, newPtr_13);
 
-		byte[] deltaBlock_13 = updateBlockOrPtr_13(addrSuf, ttp, nextLogNBytes, deltaPtr_13);
-		byte[][] rom = updateBlockOrPtr_23((int) addrPre, (int) N, DBytes, deltaBlock_13);
+		byte[] deltaBlock_13 = genBlockOrArrayDelta_13(addrSuf, ttp, nextLogNBytes, deltaPtr_13);
+		byte[][] rom = genBlockOrArrayDelta_23((int) addrPre, (int) N, DBytes, deltaBlock_13);
 
 		for (int i = 0; i < 2; i++) {
 			for (long j = 0; j < N; j++) {
@@ -258,7 +245,7 @@ public class DPFORAM {
 		byte[] rec_13 = pirout.rec_13;
 		byte[] delta_13 = isRead ? new byte[DBytes] : Util.xor(rec_13, newRec_13);
 
-		byte[][] rom = updateBlockOrPtr_23((int) addr, (int) N, DBytes, delta_13);
+		byte[][] rom = genBlockOrArrayDelta_23((int) addr, (int) N, DBytes, delta_13);
 		for (int i = 0; i < 2; i++) {
 			for (long j = 0; j < N; j++) {
 				Util.setXor(ROM[i].get(j), Arrays.copyOfRange(rom[i], (int) j * DBytes, (int) (j + 1) * DBytes));
@@ -320,7 +307,7 @@ public class DPFORAM {
 		return new PIROut(fssOut, rec_13);
 	}
 
-	private byte[][] updateBlockOrPtr_23(int idx, int numChunk, int chunkBytes, byte[] delta_13) {
+	private byte[][] genBlockOrArrayDelta_23(int idx, int numChunk, int chunkBytes, byte[] delta_13) {
 		InsLbl inslbl = null;
 		byte[][] mem = new byte[2][];
 		int memBytes = numChunk * chunkBytes;
@@ -358,7 +345,7 @@ public class DPFORAM {
 		return mem;
 	}
 
-	private byte[] updateBlockOrPtr_13(int idx, int numChunk, int chunkBytes, byte[] delta_13) {
+	private byte[] genBlockOrArrayDelta_13(int idx, int numChunk, int chunkBytes, byte[] delta_13) {
 		InsLbl inslbl = null;
 		byte[] mem_13 = null;
 		int memBytes = numChunk * chunkBytes;
