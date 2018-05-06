@@ -11,9 +11,9 @@ public class RunORAM {
 
 	public static void testAccessFirst(Party party, Communication[] cons) {
 		DPFORAM dpforam = new DPFORAM(3, 6, 4, true, party, cons);
-		// dpforam.printMetadata();
+		dpforam.printMetadata();
 
-		for (int t = 0; t < 1; t++) {////
+		for (int t = 0; t < 10; t++) {
 			long addr = Util.nextLong(dpforam.N, Crypto.sr);
 			if (party == Party.Eddie) {
 				cons[0].write(addr);
@@ -29,7 +29,7 @@ public class RunORAM {
 			int addrSuf = ((int) addr & mask);
 
 			BigInteger expected = BigInteger.ZERO;
-			for (int i = 0; i < 10; i++) {/////
+			for (int i = 0; i < 1000; i++) {
 				BigInteger newVal = new BigInteger(dpforam.logN, Crypto.sr);
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -41,7 +41,6 @@ public class RunORAM {
 				} else {
 				}
 
-				////
 				byte[] rec_13 = dpforam.getPosMap().accessFirst(addrPre, addrSuf,
 						Util.padArray(newVal.toByteArray(), dpforam.logNBytes));
 
@@ -71,7 +70,7 @@ public class RunORAM {
 		DPFORAM dpforam = new DPFORAM(3, 3, 4, true, party, cons);
 		dpforam.printMetadata();
 
-		for (int t = 0; t < 100; t++) {
+		for (int t = 0; t < 10; t++) {
 			long addr = Util.nextLong(dpforam.N, Crypto.sr);
 			if (party == Party.Eddie) {
 				cons[0].write(addr);

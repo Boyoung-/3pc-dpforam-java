@@ -180,7 +180,6 @@ public class DPFORAM {
 	
 	// TODO: clean InsLbl, change below to private
 	public byte[] accessFirst(long addrPre, int addrSuf, byte[] newPtr_13) {
-//		byte[] rec = Arrays.copyOfRange(ROM.get(addrPre), addrSuf * nextLogNBytes, (addrSuf + 1) * nextLogNBytes);
 		PIROut blockPirOut = blockPIR(addrPre);
 		byte[] block_13 = blockPirOut.rec_13;
 		byte[][] block_23 = new byte[2][];
@@ -191,9 +190,7 @@ public class DPFORAM {
 		byte[] ptr_13 = ptrPirOut.rec_13;
 		byte[] deltaPtr_13 = Util.xor(ptr_13, newPtr_13);
 		
-//		System.arraycopy(newRec, 0, ROM.get(addrPre), addrSuf * nextLogNBytes, nextLogNBytes);
 		byte[] deltaBlock_13 = updateBlockOrPtr_13(addrSuf, ttp, nextLogNBytes, deltaPtr_13);
-		Util.setXor(deltaBlock_13, block_13);
 		byte[][] rom = updateBlockOrPtr_23((int) addrPre, (int) N, DBytes, deltaBlock_13);
 		
 		for (int i=0; i<2; i++) {
@@ -202,7 +199,6 @@ public class DPFORAM {
 			}
 		}
 		
-//		return rec;
 		return ptr_13;
 	}
 
