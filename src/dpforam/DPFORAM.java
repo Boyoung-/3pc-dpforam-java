@@ -173,18 +173,21 @@ public class DPFORAM {
 		PIROut stashPirOut = blockPIR(stashAddrPre, stash);
 		// TODO: 3pc selection
 		byte[] block_13 = (stashAddrPre == 0) ? romPirOut.rec_13 : stashPirOut.rec_13;
-		if (!isFirst && !isLast)
-			System.out.println("STASH PTR = " + stashAddrPre);
+		
+//		if (!isFirst && !isLast)
+//			System.out.println("STASH PTR = " + stashAddrPre);
 		
 		if (isLast) {
-			newRec_13 = isRead ? block_13.clone() : newRec_13.clone();
+			// TODO: re-think!
+			byte[] deltaNewBlock_13 = isRead ? new byte[DBytes] : Util.xor(block_13, newRec_13);
+			newRec_13 = Util.xor(block_13, deltaNewBlock_13);
 			byte[][] newBlock_23 = new byte[2][];
 			newBlock_23[0] = newRec_13;
 			cons[0].write(newBlock_23[0]);
 			newBlock_23[1] = cons[1].read();
 			
 			// TODO: PIW
-			WOM.set(addrPre, newBlock_23[0].clone());
+			Util.setXor(WOM.get(addrPre), deltaNewBlock_13);
 			stash[0].set(stashCtr, newBlock_23[0]);
 			stash[1].set(stashCtr, newBlock_23[1]);
 			stashCtr++;
@@ -200,7 +203,7 @@ public class DPFORAM {
 			return block_13;
 		}
 		
-		System.out.println("addrSuf = " + addrSuf);
+//		System.out.println("addrSuf = " + addrSuf);
 		
 		byte[][] block_23 = new byte[2][];
 		block_23[0] = block_13;
@@ -210,85 +213,90 @@ public class DPFORAM {
 		PIROut ptrPirOut = ptrPIR(addrSuf, block_23);
 		byte[] ptr_13 = ptrPirOut.rec_13;
 		
-		if (party == Party.Eddie) {
-			byte[] test = block_23[1].clone();
-			Util.setXor(test, cons[0].read());
-			Util.setXor(test, cons[1].read());
-			System.out.println("NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, addrSuf*nextLogNBytes, (addrSuf+1)*nextLogNBytes)).longValue());
-		} else if (party == Party.Debbie) {
-			cons[1].write(block_23[1]);
-		} else if (party == Party.Charlie) {
-			cons[0].write(block_23[1]);
-		} else {
-		}
+//		if (party == Party.Eddie) {
+//			byte[] test = ptrPirOut.rec_13.clone();
+//			Util.setXor(test, cons[0].read());
+//			Util.setXor(test, cons[1].read());
+//			System.out.println("BBBBBBBBB - PTR end of pir = " + new BigInteger(1, test).longValue());
+//		} else if (party == Party.Debbie) {
+//			cons[1].write(ptrPirOut.rec_13);
+//		} else if (party == Party.Charlie) {
+//			cons[0].write(ptrPirOut.rec_13);
+//		} else {
+//		}
 		
-		if (party == Party.Eddie) {
-			byte[] test = ptr_13.clone();
-			Util.setXor(test, cons[0].read());
-			Util.setXor(test, cons[1].read());
-			System.out.println("NEXT LEVEL PTR = " + new BigInteger(1, ptr_13).longValue());
-		} else if (party == Party.Debbie) {
-			cons[1].write(ptr_13);
-		} else if (party == Party.Charlie) {
-			cons[0].write(ptr_13);
-		} else {
-		}
+//		if (party == Party.Eddie) {
+//			byte[] test = ptr_13.clone();
+//			Util.setXor(test, cons[0].read());
+//			Util.setXor(test, cons[1].read());
+//			System.out.println("NEXT LEVEL PTR = " + new BigInteger(1, test).longValue());
+//		} else if (party == Party.Debbie) {
+//			cons[1].write(ptr_13);
+//		} else if (party == Party.Charlie) {
+//			cons[0].write(ptr_13);
+//		} else {
+//		}
 		
-		if (party == Party.Eddie) {
-			byte[] test = stash[0].get(stashAddrPre).clone();
-			Util.setXor(test, cons[0].read());
-			Util.setXor(test, cons[1].read());
-			System.out.println("NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, addrSuf*nextLogNBytes, (addrSuf+1)*nextLogNBytes)).longValue());
-		} else if (party == Party.Debbie) {
-			cons[1].write(stash[0].get(stashAddrPre));
-		} else if (party == Party.Charlie) {
-			cons[0].write(stash[0].get(stashAddrPre));
-		} else {
-		}
-		
-		System.out.println("stashCtr-1 = " + (stashCtr-1));
-		System.out.println("stashAddrPre = " + stashAddrPre);
+//		if (party == Party.Eddie) {
+//			byte[] test = block_23[1].clone();
+//			Util.setXor(test, cons[0].read());
+//			Util.setXor(test, cons[1].read());
+//			System.out.println("NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, addrSuf*nextLogNBytes, (addrSuf+1)*nextLogNBytes)).longValue());
+//		} else if (party == Party.Debbie) {
+//			cons[1].write(block_23[1]);
+//		} else if (party == Party.Charlie) {
+//			cons[0].write(block_23[1]);
+//		} else {
+//		}
+//		
+//		if (party == Party.Eddie) {
+//			byte[] test = stash[0].get(stashAddrPre).clone();
+//			Util.setXor(test, cons[0].read());
+//			Util.setXor(test, cons[1].read());
+//			System.out.println("NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, addrSuf*nextLogNBytes, (addrSuf+1)*nextLogNBytes)).longValue());
+//		} else if (party == Party.Debbie) {
+//			cons[1].write(stash[0].get(stashAddrPre));
+//		} else if (party == Party.Charlie) {
+//			cons[0].write(stash[0].get(stashAddrPre));
+//		} else {
+//		}
+//		
+//		System.out.println("stashCtr-1 = " + (stashCtr-1));
+//		System.out.println("stashAddrPre = " + stashAddrPre);
 		
 		// TODO: secret-shared isRead
 		byte[] ptrDelta_13 = isRead? (new byte[nextLogNBytes]) : Util.xor(ptr_13, newRec_13);
 
-		System.out.println("isRead = " + isRead);
-		System.out.println("ptr_13 = " + new BigInteger(1, ptr_13).longValue());
-		System.out.println("NEXT LEVEL NEW PTR = " + new BigInteger(1, newRec_13).longValue());
-		System.out.println("ptrDelta_13 = " + new BigInteger(1, ptrDelta_13).longValue());
+//		System.out.println("isRead = " + isRead);
+//		System.out.println("ptr_13 = " + new BigInteger(1, ptr_13).longValue());
+//		System.out.println("NEXT LEVEL NEW PTR = " + new BigInteger(1, newRec_13).longValue());
+//		System.out.println("ptrDelta_13 = " + new BigInteger(1, ptrDelta_13).longValue());
 		
-		byte[][] newBlock_23 = updateBlockOrPtr_23(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
+		byte[] deltaNewBlock_13 = updateBlockOrPtr_13(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
+		byte[] newBlock_13 = Util.xor(block_13, deltaNewBlock_13);
+		byte[][] newBlock_23 = new byte[2][];
+		newBlock_23[0] = newBlock_13;
+		cons[0].write(newBlock_23[0]);
+		newBlock_23[1] = cons[1].read();
 		
-		if (party == Party.Eddie) {
-			byte[] test = ptrDelta_13.clone();
-			Util.setXor(test, cons[0].read());
-			Util.setXor(test, cons[1].read());
-			System.out.println("NEXT LEVEL PTR DELTA = " + new BigInteger(1, test).longValue());
-		} else if (party == Party.Debbie) {
-			cons[1].write(ptrDelta_13);
-		} else if (party == Party.Charlie) {
-			cons[0].write(ptrDelta_13);
-		} else {
-		}
-		
-		if (party == Party.Eddie) {
-			byte[] test = newBlock_23[1].clone();
-			Util.setXor(test, cons[0].read());
-			Util.setXor(test, cons[1].read());
-			System.out.println("NEXT LEVEL PTR DELTA in block = " + new BigInteger(1, Arrays.copyOfRange(test, 0, nextLogNBytes)).longValue());
-		} else if (party == Party.Debbie) {
-			cons[1].write(newBlock_23[1]);
-		} else if (party == Party.Charlie) {
-			cons[0].write(newBlock_23[1]);
-		} else {
-		}
+//		if (party == Party.Eddie) {
+//			byte[] test = ptrDelta_13.clone();
+//			Util.setXor(test, cons[0].read());
+//			Util.setXor(test, cons[1].read());
+//			System.out.println("NEXT LEVEL PTR DELTA = " + new BigInteger(1, test).longValue());
+//		} else if (party == Party.Debbie) {
+//			cons[1].write(ptrDelta_13);
+//		} else if (party == Party.Charlie) {
+//			cons[0].write(ptrDelta_13);
+//		} else {
+//		}
 		
 		//byte[] rec = Arrays.copyOfRange(block, addrSuf * newRec.length, (addrSuf + 1) * newRec.length);
 		//newRec = isRead ? rec : newRec;
 		//System.arraycopy(newRec, 0, block, addrSuf * newRec.length, newRec.length);
 		
 		// TODO: PIW
-		WOM.set(addrPre, newBlock_23[0].clone());
+		Util.setXor(WOM.get(addrPre), deltaNewBlock_13);
 		stash[0].set(stashCtr, newBlock_23[0]);
 		stash[1].set(stashCtr, newBlock_23[1]);
 		stashCtr++;
@@ -389,6 +397,26 @@ public class DPFORAM {
 	}
 	
 	private PIROut ptrPIR(int idx, byte[][] block_23) {
+//		if (logN == 6) {
+//			if (party == Party.Eddie) {
+//				byte[] test = block_23[0].clone();
+//				Util.setXor(test, cons[0].read());
+//				Util.setXor(test, cons[1].read());
+//				System.out.println("AAAAAAAAAAAAA - NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, idx*nextLogNBytes, (idx+1)*nextLogNBytes)).longValue());
+//				test = block_23[1].clone();
+//				Util.setXor(test, cons[0].read());
+//				Util.setXor(test, cons[1].read());
+//				System.out.println("AAAAAAAAAAAAA - NEXT LEVEL PTR in block = " + new BigInteger(1, Arrays.copyOfRange(test, idx*nextLogNBytes, (idx+1)*nextLogNBytes)).longValue());
+//			} else if (party == Party.Debbie) {
+//				cons[1].write(block_23[0]);
+//				cons[1].write(block_23[1]);
+//			} else if (party == Party.Charlie) {
+//				cons[0].write(block_23[0]);
+//				cons[0].write(block_23[1]);
+//			} else {
+//			}
+//		}		
+		
 		FSSKey[] keys = fss.Gen(idx, tau, new byte[nextLogNBytes]);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
@@ -405,6 +433,21 @@ public class DPFORAM {
 				}
 			}
 		}
+		
+//		if (logN == 6) {
+//			if (party == Party.Eddie) {
+//				byte[] test = rec_13.clone();
+//				Util.setXor(test, cons[0].read());
+//				Util.setXor(test, cons[1].read());
+//				System.out.println("AAAAAAAAAAAAA - PTR end of pir = " + new BigInteger(1, test).longValue());
+//			} else if (party == Party.Debbie) {
+//				cons[1].write(rec_13);
+//			} else if (party == Party.Charlie) {
+//				cons[0].write(rec_13);
+//			} else {
+//			}
+//		}		
+		
 		return new PIROut(fssOut, rec_13);
 	}
 	
