@@ -1,23 +1,34 @@
 package dpforam;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import crypto.Crypto;
 import crypto.PRG;
 import util.Util;
 
-public class FSS {
+// TODO: EvalAll
+public class FSS1Bit {
 
 	int seedBytes;
+	int ETBits;
 	PRG prg;
 
-	public FSS(int seedBytes) {
+	public FSS1Bit(int seedBytes) {
 		this.seedBytes = seedBytes;
+		ETBits = earlyTermBits(seedBytes * 8);
 		prg = new PRG();
 	}
 
-	public FSSKey[] Gen(long alpha, int m, byte[] beta) {
+	private int earlyTermBits(int n) {
+		return (int) Math.floor(Math.log(n) / Math.log(2));
+	}
+
+	public FSSKey[] Gen(long alpha, int m) {
+		long mask = (1 << m) - 1;
+		alpha &= mask;
+		int old_m = m;
+		m = Math.max(1, m - ETBits);
+
 		int mPlus1 = m + 1;
 		byte[][] s_a_p = new byte[mPlus1][];
 		byte[][] s_b_p = new byte[mPlus1][];
@@ -41,7 +52,8 @@ public class FSS {
 			System.arraycopy(twoSeeds, 0, s_b[0][j], 0, seedBytes);
 			System.arraycopy(twoSeeds, seedBytes, s_b[1][j], 0, seedBytes);
 
-			int alpha_j = (int) (alpha >>> (j - 1)) & 1;
+			int alpha_j = (int) (alpha & 1);
+			alpha = alpha >>> 1;
 			sigma[j] = Util.xor(s_a[1 - alpha_j][j], s_b[1 - alpha_j][j]);
 
 			tau[0][j] = (byte) ((s_a[0][j][seedBytes - 1] ^ s_b[0][j][seedBytes - 1] ^ alpha_j ^ 1) & 1);
@@ -62,24 +74,29 @@ public class FSS {
 		}
 
 		byte[] gamma = null;
-		if (beta.length > seedBytes) {
-			gamma = prg.compute(s_a_p[m], beta.length);
-			Util.setXor(gamma, prg.compute(s_b_p[m], beta.length));
-		} else {
-			gamma = Util.xor(s_a_p[m], s_b_p[m]);
-			if (gamma.length > beta.length)
-				gamma = Arrays.copyOfRange(gamma, 0, beta.length);
-		}
-		Util.setXor(gamma, beta);
-
 		FSSKey[] keys = new FSSKey[2];
 		keys[0] = new FSSKey(s_a_p[0], t_a[0], sigma, tau, gamma);
 		keys[1] = new FSSKey(s_b_p[0], t_b[0], sigma, tau, gamma);
 
+		if (old_m == 1) {
+			return keys;
+		}
+
+		gamma = Util.padArray(BigInteger.ZERO.setBit((int) alpha).toByteArray(), seedBytes);
+		Util.setXor(gamma, s_a_p[m]);
+		Util.setXor(gamma, s_b_p[m]);
+		keys[0].gamma = gamma;
+		keys[1].gamma = gamma;
+
 		return keys;
 	}
 
-	public byte[][] Eval(FSSKey key, long x, int m) {
+	public byte Eval(FSSKey key, long x, int m) {
+		long mask = (1 << m) - 1;
+		x &= mask;
+		int old_m = m;
+		m = Math.max(1, m - ETBits);
+
 		byte[] s_p = key.s;
 		byte[][] s = new byte[2][seedBytes];
 		byte t = key.t;
@@ -89,68 +106,60 @@ public class FSS {
 			System.arraycopy(twoSeeds, 0, s[0], 0, seedBytes);
 			System.arraycopy(twoSeeds, seedBytes, s[1], 0, seedBytes);
 
-			int x_j = (int) (x >>> (j - 1)) & 1;
+			int x_j = (int) (x & 1);
+			x = x >>> 1;
 			s_p = (t == 0) ? s[x_j] : Util.xor(s[x_j], key.sigma[j]);
 			t = (t == 0) ? 0 : key.tau[x_j][j];
 			t = (byte) ((s[x_j][seedBytes - 1] ^ t) & 1);
 		}
 
-		byte[][] out = new byte[2][];
-		if (key.gamma.length > seedBytes) {
-			out[0] = (t == 0) ? prg.compute(s_p, key.gamma.length)
-					: Util.xor(prg.compute(s_p, key.gamma.length), key.gamma);
-		} else {
-			out[0] = (seedBytes == key.gamma.length) ? s_p : Arrays.copyOfRange(s_p, 0, key.gamma.length);
-			if (t == 1)
-				out[0] = Util.xor(out[0], key.gamma);
+		if (old_m == 1) {
+			return t;
 		}
-		out[1] = new byte[] { t };
 
-		return out;
+		byte[] y = (t == 0) ? s_p : Util.xor(s_p, key.gamma);
+		t = (byte) (new BigInteger(1, y).testBit((int) x) ? 1 : 0);
+
+		return t;
 	}
 
 	// testing
 	public static void main(String[] args) {
-		int m = 10;
-		long range = (long) Math.pow(2, m);
+		for (int m = 1; m <= 10; m++) {
+			long range = (long) Math.pow(2, m);
 
-		for (int i = 0; i < 100; i++) {
-			boolean pass = true;
+			for (int i = 0; i < 100; i++) {
+				boolean pass = true;
 
-			long alpha = Util.nextLong(range, Crypto.sr);
-			byte[] beta = Util.padArray(new BigInteger(m, Crypto.sr).toByteArray(),
-					Crypto.sr.nextInt(Crypto.prgSeedBytes) + Crypto.prgSeedBytes / 2);
+				long alpha = Util.nextLong(range, Crypto.sr);
 
-			FSS fss = new FSS(Crypto.prgSeedBytes);
-			FSSKey[] keys = fss.Gen(alpha, m, beta);
+				FSS1Bit fss = new FSS1Bit(Crypto.prgSeedBytes);
+				FSSKey[] keys = fss.Gen(alpha, m);
 
-			for (long x = 0; x < range; x++) {
-				byte[][] share0 = fss.Eval(keys[0], x, m);
-				byte[][] share1 = fss.Eval(keys[1], x, m);
-				byte[] output = Util.xor(share0[0], share1[0]);
-				byte outbit = (byte) (share0[1][0] ^ share1[1][0]);
+				for (long x = 0; x < range; x++) {
+					byte share0 = fss.Eval(keys[0], x, m);
+					byte share1 = fss.Eval(keys[1], x, m);
+					int output = share0 ^ share1;
 
-				long outValue = new BigInteger(1, output).longValue();
-				long betaValue = new BigInteger(1, beta).longValue();
-				if (x == alpha) {
-					if (!Util.equal(beta, output) || outbit != 1) {
-						System.err.println("Failed: alpha=" + alpha + ", beta=" + betaValue + ", x=" + x + ", outValue="
-								+ outValue + ", outbit=" + outbit);
-						pass = false;
-					}
-				} else {
-					if (outValue != 0 || outbit != 0) {
-						System.err.println("Failed: alpha=" + alpha + ", beta=" + betaValue + ", x=" + x + ", outValue="
-								+ outValue + ", outbit=" + outbit);
-						pass = false;
+					if (x == alpha) {
+						if (output != 1) {
+							System.err.println("Failed: alpha=" + alpha + ", x=" + x + ", outValue=" + output);
+							pass = false;
+						}
+					} else {
+						if (output != 0) {
+							System.err.println("Failed: alpha=" + alpha + ", x=" + x + ", outValue=" + output);
+							pass = false;
+						}
 					}
 				}
-			}
 
-			if (pass)
-				System.out.println("i=" + i + ", betaBytes=" + beta.length + ": passed");
-			else
-				System.err.println("i=" + i + ", betaBytes=" + beta.length + ": failed");
+				if (pass)
+					System.out.println("m=" + m + ", i=" + i + ": passed");
+				else
+					System.err.println("m=" + m + ", i=" + i + ": failed");
+			}
+			System.out.println();
 		}
 	}
 
