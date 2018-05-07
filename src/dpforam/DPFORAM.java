@@ -8,10 +8,11 @@ import communication.Communication;
 import crypto.Crypto;
 import struct.Party;
 import subprotocols.InsLbl;
+import subprotocols.SSOT;
 import util.Array64;
 import util.Util;
 
-// TODO: measure bandwidth
+// TODO: measure bandwidth, time
 
 public class DPFORAM {
 
@@ -167,6 +168,8 @@ public class DPFORAM {
 		PIROut stashPirOut = blockPIR(stashAddrPre, stash);
 		// TODO: 3pc selection
 		byte[][] block_23 = (stashAddrPre == 0) ? romPirOut.rec_23 : stashPirOut.rec_23;
+		// byte[][] block_23 = oblivSelect(stashPtr_23, romPirOut.rec_23,
+		// stashPirOut.rec_23);
 
 		if (isLast) {
 			byte[][] deltaBlock_23 = isRead ? new byte[][] { new byte[DBytes], new byte[DBytes] }
@@ -186,6 +189,51 @@ public class DPFORAM {
 		updateStashAndWOM(block_23, deltaBlock_23, romPirOut.t);
 
 		return ptr_23;
+	}
+
+	private byte[][] oblivSelect(byte[][] stashPtr_23, byte[][] romBlock_23, byte[][] stashBlock_23) {
+		SSOT ssot = null;
+		byte[][] block_23 = new byte[2][];
+
+		if (party == Party.Eddie) {
+			int b1 = (stashPtr_23[0][logNBytes - 1] ^ stashPtr_23[1][logNBytes - 1]) & 1;
+			byte[][] v01 = new byte[2][];
+			v01[0] = Util.xor(romBlock_23[0], romBlock_23[1]);
+			v01[1] = Util.xor(stashBlock_23[0], stashBlock_23[1]);
+
+			ssot = new SSOT(cons[0], cons[1]);
+			byte[] block_12 = ssot.runE(b1, v01);
+
+			block_23[0] = Util.nextBytes(DBytes, Crypto.sr_DE);
+			block_23[1] = Util.xor(block_12, block_23[0]);
+			cons[1].write(block_23[1]);
+			Util.setXor(block_23[1], cons[1].read());
+
+		} else if (party == Party.Debbie) {
+			ssot = new SSOT(cons[1], cons[0]);
+			ssot.runD(DBytes);
+
+			block_23[0] = Util.nextBytes(DBytes, Crypto.sr_CD);
+			block_23[1] = Util.nextBytes(DBytes, Crypto.sr_DE);
+
+		} else if (party == Party.Charlie) {
+			int b0 = stashPtr_23[1][logNBytes - 1] & 1;
+			byte[][] u01 = new byte[2][];
+			u01[0] = romBlock_23[1];
+			u01[1] = stashBlock_23[1];
+
+			ssot = new SSOT(cons[0], cons[1]);
+			byte[] block_12 = ssot.runC(b0, u01);
+
+			block_23[1] = Util.nextBytes(DBytes, Crypto.sr_CD);
+			block_23[0] = Util.xor(block_12, block_23[1]);
+			cons[0].write(block_23[0]);
+			Util.setXor(block_23[0], cons[0].read());
+
+		} else {
+		}
+
+		return block_23;
 	}
 
 	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<byte[]> fssout) {
