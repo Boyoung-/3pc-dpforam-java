@@ -54,7 +54,7 @@ public class CLI {
 		String debbieIp = cmd.getOptionValue("debbie_ip", DEFAULT_IP);
 
 		int tau = 3;
-		int logN = 3;
+		int logN = 9;
 		int DBytes = 4;
 
 		// For now all logic happens here. Eventually this will get wrapped
@@ -124,10 +124,7 @@ public class CLI {
 		con1.setTcpNoDelay(true);
 		con2.setTcpNoDelay(true);
 
-		// RunORAM.testAccessFirstAndLast(partyEnum, new Communication[] { con1, con2
-		// });
-		// RunORAM.testAccessFirst(partyEnum, new Communication[] { con1, con2 });
-		RunORAM.testAccess(partyEnum, new Communication[] { con1, con2 });
+		RunORAM.testAccess(tau, logN, DBytes, partyEnum, new Communication[] { con1, con2 });
 
 		//////////////////////////////////////////////////////////////
 

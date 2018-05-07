@@ -10,7 +10,6 @@ import oram.Forest;
 import oram.Metadata;
 import protocols.Protocol;
 import struct.Party;
-import util.M;
 import util.Util;
 
 public class InsLbl extends Protocol {
@@ -20,20 +19,12 @@ public class InsLbl extends Protocol {
 
 	public InsLbl(Communication con1, Communication con2) {
 		super(con1, con2);
-
-		online_band = all.InsLbl_on;
-		offline_band = all.InsLbl_off;
-		timer = all.InsLbl;
 	}
 
 	public InsLbl(Communication con1, Communication con2, SecureRandom sr1, SecureRandom sr2) {
 		super(con1, con2);
 		this.sr1 = sr1;
 		this.sr2 = sr2;
-
-		online_band = all.InsLbl_on;
-		offline_band = all.InsLbl_off;
-		timer = all.InsLbl;
 	}
 
 	public void reinit(Communication con1, Communication con2, SecureRandom sr1, SecureRandom sr2) {
@@ -44,8 +35,6 @@ public class InsLbl extends Protocol {
 	}
 
 	public void runP1(int dN1, byte[] L1, int ttp) {
-		timer.start(M.offline_comp);
-
 		int l = L1.length;
 
 		byte[] p = Util.nextBytes(ttp * l, sr1);
@@ -58,26 +47,16 @@ public class InsLbl extends Protocol {
 		int u1 = alpha1 ^ v;
 		byte[] pstar = Util.xor(p, Util.xorRotate(a, u1, ttp, l));
 
-		timer.start(M.offline_write);
-		con2.write(offline_band, u1);
-		con2.write(offline_band, pstar);
-		timer.stop(M.offline_write);
-
-		timer.stop(M.offline_comp);
+		con2.write(u1);
+		con2.write(pstar);
 
 		// ----------------------------------------- //
 
-		timer.start(M.online_comp);
-
 		int m = dN1 ^ alpha1;
 
-		timer.start(M.online_write);
-		con1.write(online_band, m);
-		timer.stop(M.online_write);
+		con1.write(m);
 
-		timer.start(M.online_read);
-		m = con1.readIntAndDec();
-		timer.stop(M.online_read);
+		m = con1.readInt();
 
 		int beta1 = m ^ dN1;
 
@@ -86,17 +65,12 @@ public class InsLbl extends Protocol {
 			b[index * l + i] = (byte) (b[index * l + i] ^ L1[i]);
 		}
 
-		timer.start(M.online_write);
-		con2.write(online_band, b);
-		timer.stop(M.online_write);
+		con2.write(b);
 
-		timer.stop(M.online_comp);
 		return;
 	}
 
 	public byte[] runP2(int dN2, byte[] L2, int ttp) {
-		timer.start(M.offline_comp);
-
 		int l = L2.length;
 
 		byte[] p = Util.nextBytes(ttp * l, sr1);
@@ -109,25 +83,15 @@ public class InsLbl extends Protocol {
 		int u2 = beta2 ^ w;
 		byte[] z2 = Util.xor(p, Util.xorRotate(b, u2, ttp, l));
 
-		timer.start(M.offline_write);
-		con2.write(offline_band, u2);
-		timer.stop(M.offline_write);
-
-		timer.stop(M.offline_comp);
+		con2.write(u2);
 
 		// ----------------------------------------- //
 
-		timer.start(M.online_comp);
-
 		int m = beta2 ^ dN2;
 
-		timer.start(M.online_write);
-		con1.write(online_band, m);
-		timer.stop(M.online_write);
+		con1.write(m);
 
-		timer.start(M.online_read);
-		m = con1.readIntAndDec();
-		timer.stop(M.online_read);
+		m = con1.readInt();
 
 		int alpha2 = m ^ dN2;
 
@@ -136,40 +100,26 @@ public class InsLbl extends Protocol {
 			a[index * l + i] = (byte) (a[index * l + i] ^ L2[i]);
 		}
 
-		timer.start(M.online_write);
-		con2.write(online_band, a);
-		timer.stop(M.online_write);
+		con2.write(a);
 
-		timer.stop(M.online_comp);
 		return z2;
 	}
 
 	public byte[] runP3(int ttp, int l) {
-		timer.start(M.offline_comp);
-
-		timer.start(M.offline_read);
-		int u1 = con1.readIntAndDec();
-		byte[] pstar = con1.readAndDec();
-		int u2 = con2.readIntAndDec();
-		timer.stop(M.offline_read);
-
-		timer.stop(M.offline_comp);
+		int u1 = con1.readInt();
+		byte[] pstar = con1.read();
+		int u2 = con2.readInt();
 
 		// ----------------------------------------- //
 
-		timer.start(M.online_comp);
-
-		timer.start(M.online_read);
-		byte[] s1 = con1.readAndDec();
-		byte[] s2 = con2.readAndDec();
-		timer.stop(M.online_read);
+		byte[] s1 = con1.read();
+		byte[] s2 = con2.read();
 
 		s2 = Util.xorRotate(s2, u1, ttp, l);
 		s1 = Util.xorRotate(s1, u2, ttp, l);
 		Util.setXor(pstar, s1);
 		Util.setXor(pstar, s2);
 
-		timer.stop(M.online_comp);
 		return pstar;
 	}
 

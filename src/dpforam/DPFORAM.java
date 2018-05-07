@@ -260,8 +260,7 @@ public class DPFORAM {
 		}
 	}
 
-	// TODO: change below to private
-	public byte[][] accessFirst(long[] addrPre_23, int[] addrSuf_23, byte[][] newPtr_23) {
+	private byte[][] accessFirst(long[] addrPre_23, int[] addrSuf_23, byte[][] newPtr_23) {
 		PIROut blockPirOut = blockPIR(addrPre_23, ROM);
 		byte[][] block_23 = blockPirOut.rec_23;
 
@@ -280,8 +279,7 @@ public class DPFORAM {
 		return ptr_23;
 	}
 
-	// TODO: change below to private
-	public byte[][] accessFirstAndLast(long[] addr_23, byte[][] newRec_23, boolean isRead) {
+	private byte[][] accessFirstAndLast(long[] addr_23, byte[][] newRec_23, boolean isRead) {
 		PIROut pirout = blockPIR(addr_23, ROM);
 		byte[][] rec_23 = pirout.rec_23;
 
@@ -361,7 +359,6 @@ public class DPFORAM {
 		return rec_23;
 	}
 
-	// TODO: clean InsLbl
 	private byte[][] genBlockOrArrayDelta(int[] idx_23, int numChunk, int chunkBytes, byte[][] delta_23) {
 		InsLbl inslbl = null;
 		byte[][] mem_23 = new byte[2][];
