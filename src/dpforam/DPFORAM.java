@@ -140,21 +140,21 @@ public class DPFORAM {
 	}
 
 	// TODO: secret-shared isRead??
-	public byte[] access(long addr, byte[] newRec_13, boolean isRead) {
-		assert (newRec_13.length == (isLast ? DBytes : nextLogNBytes));
+	public byte[] access(long addr, byte[][] newRec_23, boolean isRead) {
+		assert (newRec_23[0].length == (isLast ? DBytes : nextLogNBytes));
 
 		if (isFirst && isLast)
-			return accessFirstAndLast(addr, newRec_13, isRead);
+			return accessFirstAndLast(addr, newRec_23[0], isRead);
 
 		int mask = (1 << tau) - 1;
 		long addrPre = isLast ? addr : (addr >>> tau);
 		int addrSuf = isLast ? 0 : ((int) addr & mask);
 		if (isFirst) {
-			return accessFirst(addrPre, addrSuf, newRec_13);
+			return accessFirst(addrPre, addrSuf, newRec_23[0]);
 		}
 
 		byte[] newStashPtr = Util.padArray(BigInteger.valueOf(stashCtr).toByteArray(), logNBytes);
-		byte[] stashPtr_13 = posMap.access(addrPre, newStashPtr, false);
+		byte[] stashPtr_13 = posMap.access(addrPre, new byte[][] { newStashPtr, newStashPtr }, false);
 
 		// TODO: access on addr sharing
 		cons[0].write(stashPtr_13);
@@ -168,40 +168,45 @@ public class DPFORAM {
 		PIROut stashPirOut = blockPIR(stashAddrPre, stash);
 		// TODO: 3pc selection
 		byte[] block_13 = (stashAddrPre == 0) ? romPirOut.rec_13 : stashPirOut.rec_13;
-
-		if (isLast) {
-			byte[] deltaNewBlock_13 = isRead ? new byte[DBytes] : Util.xor(block_13, newRec_13);
-
-			updateStashAndWOM(block_13, deltaNewBlock_13, addrPre);
-
-			return block_13;
-		}
-
 		byte[][] block_23 = new byte[2][];
 		block_23[0] = block_13;
 		cons[0].write(block_23[0]);
 		block_23[1] = cons[1].read();
+
+		if (isLast) {
+			byte[][] deltaBlock_23 = isRead ? new byte[][] { new byte[DBytes], new byte[DBytes] }
+					: new byte[][] { Util.xor(block_23[0], newRec_23[0]), Util.xor(block_23[1], newRec_23[1]) };
+
+			updateStashAndWOM(block_23, deltaBlock_23, romPirOut.t);
+
+			// TODO: return _23??
+			return block_13;
+		}
+
 		// TODO: pir on shared idx
-		PIROut ptrPirOut = ptrPIR(addrSuf, block_23);
-		byte[] ptr_13 = ptrPirOut.rec_13;
+		byte[] ptr_13 = ptrPIR(addrSuf, block_23);
 
-		byte[] ptrDelta_13 = isRead ? (new byte[nextLogNBytes]) : Util.xor(ptr_13, newRec_13);
-		byte[] deltaNewBlock_13 = genBlockOrArrayDelta_13(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
+		byte[] ptrDelta_13 = isRead ? (new byte[nextLogNBytes]) : Util.xor(ptr_13, newRec_23[0]);
+		byte[][] deltaBlock_23 = genBlockOrArrayDelta_23(addrSuf, ttp, nextLogNBytes, ptrDelta_13);
 
-		updateStashAndWOM(block_13, deltaNewBlock_13, addrPre);
+		updateStashAndWOM(block_23, deltaBlock_23, romPirOut.t);
 
 		return ptr_13;
 	}
 
-	private void updateStashAndWOM(byte[] block_13, byte[] deltaNewBlock_13, long addrPre) {
-		byte[] newBlock_13 = Util.xor(block_13, deltaNewBlock_13);
+	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<byte[]> fssout) {
 		byte[][] newBlock_23 = new byte[2][];
-		newBlock_23[0] = newBlock_13;
-		cons[0].write(newBlock_23[0]);
-		newBlock_23[1] = cons[1].read();
+		newBlock_23[0] = Util.xor(block_23[0], deltaBlock_23[0]);
+		newBlock_23[1] = Util.xor(block_23[1], deltaBlock_23[1]);
 
-		// TODO: PIW
-		Util.setXor(WOM.get(addrPre), deltaNewBlock_13);
+		for (int i = 0; i < 2; i++) {
+			for (long j = 0; j < N; j++) {
+				if (fssout.get(j)[i] == 1) {
+					Util.setXor(WOM.get(j), deltaBlock_23[i]);
+				}
+			}
+		}
+
 		stash[0].set(stashCtr, newBlock_23[0]);
 		stash[1].set(stashCtr, newBlock_23[1]);
 		stashCtr++;
@@ -223,8 +228,7 @@ public class DPFORAM {
 		block_23[0] = block_13;
 		cons[0].write(block_23[0]);
 		block_23[1] = cons[1].read();
-		PIROut ptrPirOut = ptrPIR(addrSuf, block_23);
-		byte[] ptr_13 = ptrPirOut.rec_13;
+		byte[] ptr_13 = ptrPIR(addrSuf, block_23);
 		byte[] deltaPtr_13 = Util.xor(ptr_13, newPtr_13);
 
 		byte[] deltaBlock_13 = genBlockOrArrayDelta_13(addrSuf, ttp, nextLogNBytes, deltaPtr_13);
@@ -255,56 +259,51 @@ public class DPFORAM {
 	}
 
 	class PIROut {
-		Array64<byte[][]>[] fssout;
+		Array64<byte[]> t;
 		public byte[] rec_13;
 
-		public PIROut(Array64<byte[][]>[] fssout, byte[] rec_13) {
-			this.fssout = fssout;
+		public PIROut(Array64<byte[]> t, byte[] rec_13) {
+			this.t = t;
 			this.rec_13 = rec_13;
 		}
 	}
 
 	private PIROut blockPIR(long addr, Array64<byte[]>[] mem) {
-		FSSKey[] keys = fss.Gen(addr, logN, new byte[DBytes]);
+		FSSKey[] keys = fss.Gen(addr, logN, new byte[1]);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
 		byte[] rec_13 = new byte[DBytes];
-		@SuppressWarnings("unchecked")
-		Array64<byte[][]>[] fssOut = (Array64<byte[][]>[]) new Array64[] { new Array64<byte[][]>(N),
-				new Array64<byte[][]>(N) };
-		for (int i = 0; i < 2; i++) {
-			for (long j = 0; j < N; j++) {
-				fssOut[i].set(j, fss.Eval(keys[i], j, logN));
-				if (fssOut[i].get(j)[1][0] == 1) {
+		Array64<byte[]> t = new Array64<byte[]>(N);
+		for (long j = 0; j < N; j++) {
+			t.set(j, new byte[2]);
+			for (int i = 0; i < 2; i++) {
+				t.get(j)[i] = fss.Eval(keys[i], j, logN)[1][0];
+				if (t.get(j)[i] == 1) {
 					Util.setXor(rec_13, mem[i].get(j));
 				}
 			}
 		}
-		return new PIROut(fssOut, rec_13);
+		return new PIROut(t, rec_13);
 	}
 
-	private PIROut ptrPIR(int idx, byte[][] block_23) {
-		FSSKey[] keys = fss.Gen(idx, tau, new byte[nextLogNBytes]);
+	private byte[] ptrPIR(int idx, byte[][] block_23) {
+		FSSKey[] keys = fss.Gen(idx, tau, new byte[1]);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
 		byte[] rec_13 = new byte[nextLogNBytes];
-		@SuppressWarnings("unchecked")
-		Array64<byte[][]>[] fssOut = (Array64<byte[][]>[]) new Array64[] { new Array64<byte[][]>(ttp),
-				new Array64<byte[][]>(ttp) };
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < ttp; j++) {
-				fssOut[i].set(j, fss.Eval(keys[i], j, tau));
-				if (fssOut[i].get(j)[1][0] == 1) {
+				byte[][] fssout = fss.Eval(keys[i], j, tau);
+				if (fssout[1][0] == 1) {
 					Util.setXor(rec_13, Arrays.copyOfRange(block_23[i], j * nextLogNBytes, (j + 1) * nextLogNBytes));
 				}
 			}
 		}
-
-		return new PIROut(fssOut, rec_13);
+		return rec_13;
 	}
 
 	private byte[][] genBlockOrArrayDelta_23(int idx, int numChunk, int chunkBytes, byte[] delta_13) {
