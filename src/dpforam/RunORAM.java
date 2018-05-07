@@ -26,7 +26,7 @@ public class RunORAM {
 			}
 
 			BigInteger expected = BigInteger.valueOf(addr % DPFORAM.prime);
-			for (int i = 0; i < 1000; i++) {
+			for (int i = 0; i < 100; i++) {
 				BigInteger newVal = BigInteger.valueOf(Crypto.sr.nextInt(DPFORAM.prime));
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -86,7 +86,7 @@ public class RunORAM {
 			int addrSuf = ((int) addr & mask);
 
 			BigInteger expected = BigInteger.ZERO;
-			for (int i = 0; i < 1000; i++) {
+			for (int i = 0; i < 100; i++) {
 				BigInteger newVal = new BigInteger(dpforam.logN, Crypto.sr);
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -98,8 +98,10 @@ public class RunORAM {
 				} else {
 				}
 
-				byte[] rec_13 = dpforam.getPosMap().accessFirst(addrPre, addrSuf,
-						Util.padArray(newVal.toByteArray(), dpforam.logNBytes));
+				byte[][] newRec = new byte[2][];
+				newRec[0] = Util.padArray(newVal.toByteArray(), dpforam.logNBytes);
+				newRec[1] = newRec[0].clone();
+				byte[] rec_13 = dpforam.getPosMap().accessFirst(addrPre, addrSuf, newRec)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -140,7 +142,7 @@ public class RunORAM {
 			}
 
 			long expected = addr % DPFORAM.prime;
-			for (int i = 0; i < 1000; i++) {
+			for (int i = 0; i < 100; i++) {
 				int newVal = Crypto.sr.nextInt(DPFORAM.prime);
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -152,8 +154,10 @@ public class RunORAM {
 				} else {
 				}
 
-				byte[] rec_13 = dpforam.accessFirstAndLast(addr,
-						Util.padArray(BigInteger.valueOf(newVal).toByteArray(), dpforam.DBytes), false);
+				byte[][] newRec = new byte[2][];
+				newRec[0] = Util.padArray(BigInteger.valueOf(newVal).toByteArray(), dpforam.DBytes);
+				newRec[1] = newRec[0].clone();
+				byte[] rec_13 = dpforam.accessFirstAndLast(addr, newRec, false)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -175,5 +179,7 @@ public class RunORAM {
 		}
 
 		System.out.println("Test accessFirstAndLast() done.");
+		System.out.println(
+				"Note: if some addr is tested twice, the first read of the second test run will be error, which is correct");
 	}
 }

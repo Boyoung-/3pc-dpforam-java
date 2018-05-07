@@ -124,6 +124,9 @@ public class CLI {
 		con1.setTcpNoDelay(true);
 		con2.setTcpNoDelay(true);
 
+		// RunORAM.testAccessFirstAndLast(partyEnum, new Communication[] { con1, con2
+		// });
+		// RunORAM.testAccessFirst(partyEnum, new Communication[] { con1, con2 });
 		RunORAM.testAccess(partyEnum, new Communication[] { con1, con2 });
 
 		//////////////////////////////////////////////////////////////
