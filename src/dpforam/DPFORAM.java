@@ -49,9 +49,9 @@ public class DPFORAM {
 		this.cons = cons;
 
 		ttp = (int) Math.pow(2, tau);
-		logNBytes = (logN + 7) / 8;
+		logNBytes = (logN + 7) / 8 + 1;
 		nextLogN = isLast ? 0 : logN + tau;
-		nextLogNBytes = (nextLogN + 7) / 8;
+		nextLogNBytes = (nextLogN + 7) / 8 + 1;
 		this.DBytes = isLast ? DBytes : nextLogNBytes * ttp;
 		N = (long) Math.pow(2, logN);
 		isFirst = logN - tau < tau;
@@ -140,7 +140,7 @@ public class DPFORAM {
 		ROM[1] = cons[1].readArray64ByteArray();
 	}
 
-	// TODO: secret-shared isRead??
+	// TODO: on shared addr
 	public byte[][] access(long addr, byte[][] newRec_23, boolean isRead) {
 		assert (newRec_23[0].length == (isLast ? DBytes : nextLogNBytes));
 
@@ -155,9 +155,10 @@ public class DPFORAM {
 		}
 
 		byte[] newStashPtr = Util.padArray(BigInteger.valueOf(stashCtr).toByteArray(), logNBytes);
+		newStashPtr[0] = 1;
 		byte[][] stashPtr_23 = posMap.access(addrPre, new byte[][] { newStashPtr, newStashPtr }, false);
 
-		// TODO: access on addr sharing
+		// TODO: on shared stashPtr
 		cons[0].write(stashPtr_23[1]);
 		byte[] stashPtr = cons[1].read();
 		Util.setXor(stashPtr, stashPtr_23[0]);
@@ -166,10 +167,8 @@ public class DPFORAM {
 		long stashAddrPre = new BigInteger(1, stashPtr).longValue();
 		PIROut romPirOut = blockPIR(addrPre, ROM);
 		PIROut stashPirOut = blockPIR(stashAddrPre, stash);
-		// TODO: 3pc selection
-		byte[][] block_23 = (stashAddrPre == 0) ? romPirOut.rec_23 : stashPirOut.rec_23;
-		// byte[][] block_23 = oblivSelect(stashPtr_23, romPirOut.rec_23,
-		// stashPirOut.rec_23);
+		byte[] indicator_23 = new byte[] { stashPtr_23[0][0], stashPtr_23[1][0] };
+		byte[][] block_23 = oblivSelect(indicator_23, romPirOut.rec_23, stashPirOut.rec_23);
 
 		if (isLast) {
 			byte[][] deltaBlock_23 = isRead ? new byte[][] { new byte[DBytes], new byte[DBytes] }
@@ -180,7 +179,6 @@ public class DPFORAM {
 			return block_23;
 		}
 
-		// TODO: pir on shared idx
 		byte[][] ptr_23 = ptrPIR(addrSuf, block_23);
 		byte[][] ptrDelta_23 = isRead ? new byte[][] { new byte[nextLogNBytes], new byte[nextLogNBytes] }
 				: new byte[][] { Util.xor(ptr_23[0], newRec_23[0]), Util.xor(ptr_23[1], newRec_23[1]) };
@@ -191,12 +189,12 @@ public class DPFORAM {
 		return ptr_23;
 	}
 
-	private byte[][] oblivSelect(byte[][] stashPtr_23, byte[][] romBlock_23, byte[][] stashBlock_23) {
+	private byte[][] oblivSelect(byte[] indicator_23, byte[][] romBlock_23, byte[][] stashBlock_23) {
 		SSOT ssot = null;
 		byte[][] block_23 = new byte[2][];
 
 		if (party == Party.Eddie) {
-			int b1 = (stashPtr_23[0][logNBytes - 1] ^ stashPtr_23[1][logNBytes - 1]) & 1;
+			int b1 = (indicator_23[0] ^ indicator_23[1]) & 1;
 			byte[][] v01 = new byte[2][];
 			v01[0] = Util.xor(romBlock_23[0], romBlock_23[1]);
 			v01[1] = Util.xor(stashBlock_23[0], stashBlock_23[1]);
@@ -217,7 +215,7 @@ public class DPFORAM {
 			block_23[1] = Util.nextBytes(DBytes, Crypto.sr_DE);
 
 		} else if (party == Party.Charlie) {
-			int b0 = stashPtr_23[1][logNBytes - 1] & 1;
+			int b0 = indicator_23[1] & 1;
 			byte[][] u01 = new byte[2][];
 			u01[0] = romBlock_23[1];
 			u01[1] = stashBlock_23[1];
@@ -262,7 +260,7 @@ public class DPFORAM {
 		}
 	}
 
-	// TODO: clean InsLbl, change below to private
+	// TODO: change below to private; on shared addrPre and addrSuf
 	public byte[][] accessFirst(long addrPre, int addrSuf, byte[][] newPtr_23) {
 		PIROut blockPirOut = blockPIR(addrPre, ROM);
 		byte[][] block_23 = blockPirOut.rec_23;
@@ -281,7 +279,7 @@ public class DPFORAM {
 		return ptr_23;
 	}
 
-	// TODO: change below to private
+	// TODO: change below to private; on shared addr
 	public byte[][] accessFirstAndLast(long addr, byte[][] newRec_23, boolean isRead) {
 		PIROut pirout = blockPIR(addr, ROM);
 		byte[][] rec_23 = pirout.rec_23;
@@ -309,6 +307,7 @@ public class DPFORAM {
 		}
 	}
 
+	// TODO: on shared addr
 	private PIROut blockPIR(long addr, Array64<byte[]>[] mem) {
 		FSSKey[] keys = fss.Gen(addr, logN, new byte[1]);
 		cons[0].write(keys[0]);
@@ -336,6 +335,7 @@ public class DPFORAM {
 		return new PIROut(t, rec_23);
 	}
 
+	// TODO: on shared idx
 	private byte[][] ptrPIR(int idx, byte[][] block_23) {
 		FSSKey[] keys = fss.Gen(idx, tau, new byte[1]);
 		cons[0].write(keys[0]);
@@ -361,6 +361,7 @@ public class DPFORAM {
 		return rec_23;
 	}
 
+	// TODO: on shared idx; clean InsLbl
 	private byte[][] genBlockOrArrayDelta(int idx, int numChunk, int chunkBytes, byte[][] delta_23) {
 		InsLbl inslbl = null;
 		byte[][] mem = new byte[2][];
