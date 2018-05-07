@@ -41,7 +41,7 @@ public class RunORAM {
 				byte[][] newRec = new byte[2][];
 				newRec[0] = Util.padArray(newVal.toByteArray(), dpforam.DBytes);
 				newRec[1] = newRec[0].clone();
-				byte[] rec_13 = dpforam.access(addr, newRec, false)[0];
+				byte[] rec_13 = dpforam.access(new long[] { addr, addr }, newRec, false)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -105,7 +105,8 @@ public class RunORAM {
 				byte[][] newRec = new byte[2][];
 				newRec[0] = Util.padArray(newVal.toByteArray(), dpforam.logNBytes);
 				newRec[1] = newRec[0].clone();
-				byte[] rec_13 = dpforam.getPosMap().accessFirst(addrPre, addrSuf, newRec)[0];
+				byte[] rec_13 = dpforam.getPosMap().accessFirst(new long[] { addrPre, addrPre },
+						new int[] { addrSuf, addrSuf }, newRec)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -161,7 +162,7 @@ public class RunORAM {
 				byte[][] newRec = new byte[2][];
 				newRec[0] = Util.padArray(BigInteger.valueOf(newVal).toByteArray(), dpforam.DBytes);
 				newRec[1] = newRec[0].clone();
-				byte[] rec_13 = dpforam.accessFirstAndLast(addr, newRec, false)[0];
+				byte[] rec_13 = dpforam.accessFirstAndLast(new long[] { addr, addr }, newRec, false)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
