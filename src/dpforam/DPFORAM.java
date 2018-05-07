@@ -140,39 +140,33 @@ public class DPFORAM {
 	}
 
 	// TODO: secret-shared isRead??
-	// TODO: return byte[][]
-	public byte[] access(long addr, byte[][] newRec_23, boolean isRead) {
+	public byte[][] access(long addr, byte[][] newRec_23, boolean isRead) {
 		assert (newRec_23[0].length == (isLast ? DBytes : nextLogNBytes));
 
 		if (isFirst && isLast)
-			return accessFirstAndLast(addr, newRec_23, isRead)[0];
+			return accessFirstAndLast(addr, newRec_23, isRead);
 
 		int mask = (1 << tau) - 1;
 		long addrPre = isLast ? addr : (addr >>> tau);
 		int addrSuf = isLast ? 0 : ((int) addr & mask);
 		if (isFirst) {
-			return accessFirst(addrPre, addrSuf, newRec_23)[0];
+			return accessFirst(addrPre, addrSuf, newRec_23);
 		}
 
 		byte[] newStashPtr = Util.padArray(BigInteger.valueOf(stashCtr).toByteArray(), logNBytes);
-		byte[] stashPtr_13 = posMap.access(addrPre, new byte[][] { newStashPtr, newStashPtr }, false);
+		byte[][] stashPtr_23 = posMap.access(addrPre, new byte[][] { newStashPtr, newStashPtr }, false);
 
 		// TODO: access on addr sharing
-		cons[0].write(stashPtr_13);
-		cons[1].write(stashPtr_13);
-		byte[] stashPtr = stashPtr_13.clone();
-		Util.setXor(stashPtr, cons[0].read());
-		Util.setXor(stashPtr, cons[1].read());
+		cons[0].write(stashPtr_23[1]);
+		byte[] stashPtr = cons[1].read();
+		Util.setXor(stashPtr, stashPtr_23[0]);
+		Util.setXor(stashPtr, stashPtr_23[1]);
 
 		long stashAddrPre = new BigInteger(1, stashPtr).longValue();
 		PIROut romPirOut = blockPIR(addrPre, ROM);
 		PIROut stashPirOut = blockPIR(stashAddrPre, stash);
 		// TODO: 3pc selection
-		byte[] block_13 = (stashAddrPre == 0) ? romPirOut.rec_13 : stashPirOut.rec_13;
-		byte[][] block_23 = new byte[2][];
-		block_23[0] = block_13;
-		cons[0].write(block_23[0]);
-		block_23[1] = cons[1].read();
+		byte[][] block_23 = (stashAddrPre == 0) ? romPirOut.rec_23 : stashPirOut.rec_23;
 
 		if (isLast) {
 			byte[][] deltaBlock_23 = isRead ? new byte[][] { new byte[DBytes], new byte[DBytes] }
@@ -180,24 +174,18 @@ public class DPFORAM {
 
 			updateStashAndWOM(block_23, deltaBlock_23, romPirOut.t);
 
-			// TODO: return _23??
-			return block_13;
+			return block_23;
 		}
 
 		// TODO: pir on shared idx
-		byte[] ptr_13 = ptrPIR(addrSuf, block_23);
-		byte[][] ptr_23 = new byte[2][];
-		ptr_23[0] = ptr_13;
-		cons[0].write(ptr_23[0]);
-		ptr_23[1] = cons[1].read();
-
+		byte[][] ptr_23 = ptrPIR(addrSuf, block_23);
 		byte[][] ptrDelta_23 = isRead ? new byte[][] { new byte[nextLogNBytes], new byte[nextLogNBytes] }
 				: new byte[][] { Util.xor(ptr_23[0], newRec_23[0]), Util.xor(ptr_23[1], newRec_23[1]) };
 		byte[][] deltaBlock_23 = genBlockOrArrayDelta(addrSuf, ttp, nextLogNBytes, ptrDelta_23);
 
 		updateStashAndWOM(block_23, deltaBlock_23, romPirOut.t);
 
-		return ptr_13;
+		return ptr_23;
 	}
 
 	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<byte[]> fssout) {
@@ -229,19 +217,10 @@ public class DPFORAM {
 	// TODO: clean InsLbl, change below to private
 	public byte[][] accessFirst(long addrPre, int addrSuf, byte[][] newPtr_23) {
 		PIROut blockPirOut = blockPIR(addrPre, ROM);
-		byte[] block_13 = blockPirOut.rec_13;
-		byte[][] block_23 = new byte[2][];
-		block_23[0] = block_13;
-		cons[0].write(block_23[0]);
-		block_23[1] = cons[1].read();
-		byte[] ptr_13 = ptrPIR(addrSuf, block_23);
-		byte[][] ptr_23 = new byte[2][];
-		ptr_23[0] = ptr_13;
-		cons[0].write(ptr_23[0]);
-		ptr_23[1] = cons[1].read();
+		byte[][] block_23 = blockPirOut.rec_23;
 
+		byte[][] ptr_23 = ptrPIR(addrSuf, block_23);
 		byte[][] deltaPtr_23 = new byte[][] { Util.xor(ptr_23[0], newPtr_23[0]), Util.xor(ptr_23[1], newPtr_23[1]) };
-
 		byte[][] deltaBlock_23 = genBlockOrArrayDelta(addrSuf, ttp, nextLogNBytes, deltaPtr_23);
 		byte[][] rom = genBlockOrArrayDelta((int) addrPre, (int) N, DBytes, deltaBlock_23);
 
@@ -257,11 +236,7 @@ public class DPFORAM {
 	// TODO: change below to private
 	public byte[][] accessFirstAndLast(long addr, byte[][] newRec_23, boolean isRead) {
 		PIROut pirout = blockPIR(addr, ROM);
-		byte[] rec_13 = pirout.rec_13;
-		byte[][] rec_23 = new byte[2][];
-		rec_23[0] = rec_13;
-		cons[0].write(rec_23[0]);
-		rec_23[1] = cons[1].read();
+		byte[][] rec_23 = pirout.rec_23;
 
 		byte[][] delta_23 = isRead ? new byte[][] { new byte[DBytes], new byte[DBytes] }
 				: new byte[][] { Util.xor(rec_23[0], newRec_23[0]), Util.xor(rec_23[1], newRec_23[1]) };
@@ -278,11 +253,11 @@ public class DPFORAM {
 
 	class PIROut {
 		Array64<byte[]> t;
-		public byte[] rec_13;
+		public byte[][] rec_23;
 
-		public PIROut(Array64<byte[]> t, byte[] rec_13) {
+		public PIROut(Array64<byte[]> t, byte[][] rec_23) {
 			this.t = t;
-			this.rec_13 = rec_13;
+			this.rec_23 = rec_23;
 		}
 	}
 
@@ -292,6 +267,7 @@ public class DPFORAM {
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
+
 		byte[] rec_13 = new byte[DBytes];
 		Array64<byte[]> t = new Array64<byte[]>(N);
 		for (long j = 0; j < N; j++) {
@@ -303,15 +279,22 @@ public class DPFORAM {
 				}
 			}
 		}
-		return new PIROut(t, rec_13);
+
+		byte[][] rec_23 = new byte[2][];
+		rec_23[0] = rec_13;
+		cons[0].write(rec_23[0]);
+		rec_23[1] = cons[1].read();
+
+		return new PIROut(t, rec_23);
 	}
 
-	private byte[] ptrPIR(int idx, byte[][] block_23) {
+	private byte[][] ptrPIR(int idx, byte[][] block_23) {
 		FSSKey[] keys = fss.Gen(idx, tau, new byte[1]);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
+
 		byte[] rec_13 = new byte[nextLogNBytes];
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < ttp; j++) {
@@ -321,7 +304,13 @@ public class DPFORAM {
 				}
 			}
 		}
-		return rec_13;
+
+		byte[][] rec_23 = new byte[2][];
+		rec_23[0] = rec_13;
+		cons[0].write(rec_23[0]);
+		rec_23[1] = cons[1].read();
+
+		return rec_23;
 	}
 
 	private byte[][] genBlockOrArrayDelta(int idx, int numChunk, int chunkBytes, byte[][] delta_23) {

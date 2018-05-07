@@ -41,7 +41,7 @@ public class RunORAM {
 				byte[][] newRec = new byte[2][];
 				newRec[0] = Util.padArray(newVal.toByteArray(), dpforam.DBytes);
 				newRec[1] = newRec[0].clone();
-				byte[] rec_13 = dpforam.access(addr, newRec, false);
+				byte[] rec_13 = dpforam.access(addr, newRec, false)[0];
 
 				if (party == Party.Eddie) {
 					Util.setXor(rec_13, cons[0].read());
@@ -64,6 +64,10 @@ public class RunORAM {
 		}
 
 		System.out.println("Test access() done.");
+		// TODO: not test on same addr twice
+		System.out.println("Note: if some addr is tested twice, ");
+		System.out.println("then the first read of the second test run will be error, ");
+		System.out.println("which is correct.");
 	}
 
 	public static void testAccessFirst(Party party, Communication[] cons) {
