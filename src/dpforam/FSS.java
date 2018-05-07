@@ -7,6 +7,7 @@ import crypto.Crypto;
 import crypto.PRG;
 import util.Util;
 
+// TODO: 1-bit output and early termination
 public class FSS {
 
 	int seedBytes;
