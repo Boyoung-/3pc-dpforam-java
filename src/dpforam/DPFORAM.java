@@ -18,7 +18,7 @@ public class DPFORAM {
 
 	public static final int prime = 251;
 
-	public static final FSS fss = new FSS(Crypto.prgSeedBytes);
+	public static final FSS1Bit fss = new FSS1Bit(Crypto.prgSeedBytes);
 
 	public final int logN;
 	public final int logNBytes;
@@ -308,7 +308,7 @@ public class DPFORAM {
 	}
 
 	private PIROut blockPIR(long[] addr_23, Array64<byte[]>[] mem_23) {
-		FSSKey[] keys = fss.Gen(addr_23[0] ^ addr_23[1], logN, new byte[1]);
+		FSSKey[] keys = fss.Gen(addr_23[0] ^ addr_23[1], logN);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
@@ -319,7 +319,7 @@ public class DPFORAM {
 		for (long j = 0; j < N; j++) {
 			t.set(j, new byte[2]);
 			for (int i = 0; i < 2; i++) {
-				t.get(j)[i] = fss.Eval(keys[i], j ^ addr_23[i], logN)[1][0];
+				t.get(j)[i] = fss.Eval(keys[i], j ^ addr_23[i], logN);
 				if (t.get(j)[i] == 1) {
 					Util.setXor(rec_13, mem_23[i].get(j));
 				}
@@ -335,7 +335,7 @@ public class DPFORAM {
 	}
 
 	private byte[][] ptrPIR(int[] idx_23, byte[][] block_23) {
-		FSSKey[] keys = fss.Gen(idx_23[0] ^ idx_23[1], tau, new byte[1]);
+		FSSKey[] keys = fss.Gen(idx_23[0] ^ idx_23[1], tau);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
@@ -344,8 +344,8 @@ public class DPFORAM {
 		byte[] rec_13 = new byte[nextLogNBytes];
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < ttp; j++) {
-				byte[][] fssout = fss.Eval(keys[i], j ^ idx_23[i], tau);
-				if (fssout[1][0] == 1) {
+				byte fssout = fss.Eval(keys[i], j ^ idx_23[i], tau);
+				if (fssout == 1) {
 					Util.setXor(rec_13, Arrays.copyOfRange(block_23[i], j * nextLogNBytes, (j + 1) * nextLogNBytes));
 				}
 			}
