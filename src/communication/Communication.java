@@ -362,6 +362,9 @@ public class Communication {
 		write(ArrayUtils.addAll(size_bytes, len_bytes));
 		for (int i = 0; i < len; i++) {
 			Object[] b = array.getChunk(i);
+			// TODO: handle if b has more than Integer.MAX_VALUE bytes (right now this is
+			// safe when each byte[] in Array64<byte[]> has less than (Integer.MAX_VALUE /
+			// Array64.CHUNK_SIZE) bytes)
 			write(b);
 		}
 	}
