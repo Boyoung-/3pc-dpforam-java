@@ -22,6 +22,9 @@ public class CLI {
 		Options options = new Options();
 		options.addOption("eddie_ip", true, "IP to look for eddie");
 		options.addOption("debbie_ip", true, "IP to look for debbie");
+		options.addOption("tau", true, "recursion parameter");
+		options.addOption("logN", true, "address bits");
+		options.addOption("DBytes", true, "payload bytes");
 
 		// Parse the command line arguments
 		CommandLineParser cmdParser = new GnuParser();
