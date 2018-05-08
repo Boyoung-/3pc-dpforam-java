@@ -7,7 +7,82 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import fss.FSSKey;
+
 public class ComUtil {
+	public static byte[] serialize(FSSKey key) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(baos);
+		byte[] out = null;
+		try {
+			int seedBytes = key.s.length;
+			int mPlus1 = key.sigma.length;
+			dos.writeInt(seedBytes);
+			dos.writeInt(mPlus1);
+			dos.write(key.s);
+			dos.writeByte(key.t);
+			for (int i = 1; i < mPlus1; i++) {
+				dos.write(key.sigma[i]);
+			}
+			dos.write(key.tau[0]);
+			dos.write(key.tau[1]);
+			if (key.gamma == null) {
+				dos.writeInt(-1);
+			} else {
+				dos.writeInt(key.gamma.length);
+				dos.write(key.gamma);
+			}
+			out = baos.toByteArray();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				dos.close();
+				baos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return out;
+	}
+
+	public static FSSKey toFSSKey(byte[] in) {
+		ByteArrayInputStream bais = new ByteArrayInputStream(in);
+		DataInputStream dis = new DataInputStream(bais);
+		FSSKey out = null;
+		try {
+			int seedBytes = dis.readInt();
+			int mPlus1 = dis.readInt();
+			byte[] s = new byte[seedBytes];
+			dis.read(s);
+			byte t = dis.readByte();
+			byte[][] sigma = new byte[mPlus1][seedBytes];
+			for (int i = 1; i < mPlus1; i++) {
+				dis.read(sigma[i]);
+			}
+			byte[][] tau = new byte[2][mPlus1];
+			dis.read(tau[0]);
+			dis.read(tau[1]);
+			byte[] gamma = null;
+			int gammaLen = dis.readInt();
+			if (gammaLen > -1) {
+				gamma = new byte[gammaLen];
+				dis.read(gamma);
+			}
+			out = new FSSKey(s, t, sigma, tau, gamma);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				dis.close();
+				bais.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return out;
+	}
+
 	public static byte[] serialize(byte[][] in) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);

@@ -321,8 +321,8 @@ public class DPFORAM {
 		FSSKey[] keys = fss.Gen(addr_23[0] ^ addr_23[1], logN);
 		cons[0].write(bandwidth, keys[0]);
 		cons[1].write(bandwidth, keys[1]);
-		keys[1] = (FSSKey) cons[0].readObject();
-		keys[0] = (FSSKey) cons[1].readObject();
+		keys[1] = (FSSKey) cons[0].readFSSKey();
+		keys[0] = (FSSKey) cons[1].readFSSKey();
 
 		byte[] rec_13 = new byte[DBytes];
 		@SuppressWarnings("unchecked")
@@ -348,8 +348,8 @@ public class DPFORAM {
 		FSSKey[] keys = fss.Gen(idx_23[0] ^ idx_23[1], tau);
 		cons[0].write(bandwidth, keys[0]);
 		cons[1].write(bandwidth, keys[1]);
-		keys[1] = (FSSKey) cons[0].readObject();
-		keys[0] = (FSSKey) cons[1].readObject();
+		keys[1] = (FSSKey) cons[0].readFSSKey();
+		keys[0] = (FSSKey) cons[1].readFSSKey();
 
 		byte[] rec_13 = new byte[nextLogNBytes];
 		for (int i = 0; i < 2; i++) {

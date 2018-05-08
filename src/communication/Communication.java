@@ -20,6 +20,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import org.bouncycastle.util.Arrays;
 
 import crypto.SimpleAES;
+import fss.FSSKey;
 import struct.Global;
 import util.Array64;
 import util.Bandwidth;
@@ -376,8 +377,19 @@ public class Communication {
 		write(bandwidth, ArrayUtils.addAll(size_bytes, len_bytes));
 		for (int i = 0; i < len; i++) {
 			Object[] b = array.getChunk(i);
+			// TODO: handle if b has more than Integer.MAX_VALUE bytes (right now this is
+			// safe when each byte[] in Array64<byte[]> has less than (Integer.MAX_VALUE /
+			// Array64.CHUNK_SIZE) bytes)
 			write(bandwidth, b);
 		}
+	}
+
+	public void write(FSSKey key) {
+		write(ComUtil.serialize(key));
+	}
+
+	public void write(Bandwidth bandwidth, FSSKey key) {
+		write(bandwidth, ComUtil.serialize(key));
 	}
 
 	public void write(BigInteger b) {
@@ -540,6 +552,10 @@ public class Communication {
 		for (int i = 0; i < len; i++)
 			data[i] = this.readObject();
 		return new Array64<byte[]>(size, data);
+	}
+
+	public FSSKey readFSSKey() {
+		return ComUtil.toFSSKey(read());
 	}
 
 	public BigInteger readBigInteger() {
