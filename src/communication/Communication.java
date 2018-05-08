@@ -21,7 +21,6 @@ import crypto.SimpleAES;
 import struct.Global;
 import util.Array64;
 import util.Bandwidth;
-import util.StopWatch;
 import util.Util;
 
 /**
@@ -71,9 +70,7 @@ public class Communication {
 	protected int mState;
 	protected InetSocketAddress mAddress;
 
-	// TODO: enable link encryption and remove manual AES Enc
 	private static SimpleAES aes = new SimpleAES();
-	public StopWatch comEnc = new StopWatch("ComEnc_comp");
 
 	public Communication() {
 		mState = STATE_NONE;
@@ -326,14 +323,12 @@ public class Communication {
 			r = mConnectedThread;
 		}
 		// Perform the write unsynchronized
+		if (Global.linkEnc)
+			out = aes.encrypt(out);
 		r.write(out);
 	}
 
 	public void write(Bandwidth bandwidth, byte[] out) {
-		// comEnc.start();
-		// out = aes.encrypt(out);
-		// comEnc.stop();
-
 		write(out);
 
 		if (Global.bandSwitch)
@@ -358,6 +353,7 @@ public class Communication {
 		write(bandwidth, SerializationUtils.serialize((Serializable) out));
 	}
 
+	// TODO: reduce num of writes
 	public void write(Array64<byte[]> array) {
 		write(array.size());
 		int len = array.numChunks();
@@ -368,6 +364,7 @@ public class Communication {
 		}
 	}
 
+	// TODO: reduce num of writes
 	public void write(Bandwidth bandwidth, Array64<byte[]> array) {
 		write(bandwidth, array.size());
 		int len = array.numChunks();
@@ -489,18 +486,12 @@ public class Communication {
 
 		// Perform the read unsynchronized and parse
 		byte[] readMessage = r.read();
+		if (Global.linkEnc)
+			readMessage = aes.decrypt(readMessage);
 
 		if (D)
 			Util.debug("Read: " + new String(readMessage));
 		return readMessage;
-	}
-
-	public byte[] readAndDec() {
-		byte[] msg = read();
-		comEnc.start();
-		msg = aes.decrypt(msg);
-		comEnc.stop();
-		return msg;
 	}
 
 	/**
@@ -535,11 +526,6 @@ public class Communication {
 		return object;
 	}
 
-	public <T> T readObjectAndDec() {
-		T object = SerializationUtils.deserialize(readAndDec());
-		return object;
-	}
-
 	public Array64<byte[]> readArray64ByteArray() {
 		long size = readLong();
 		int len = readInt();
@@ -553,64 +539,32 @@ public class Communication {
 		return new BigInteger(read());
 	}
 
-	public BigInteger readBigIntegerAndDec() {
-		return new BigInteger(readAndDec());
-	}
-
 	public int readInt() {
 		return readBigInteger().intValue();
-	}
-
-	public int readIntAndDec() {
-		return readBigIntegerAndDec().intValue();
 	}
 
 	public long readLong() {
 		return readBigInteger().longValue();
 	}
 
-	public long readLongAndDec() {
-		return readBigIntegerAndDec().longValue();
-	}
-
 	public byte[][] readDoubleByteArray() {
 		return ComUtil.toDoubleByteArray(read());
-	}
-
-	public byte[][] readDoubleByteArrayAndDec() {
-		return ComUtil.toDoubleByteArray(readAndDec());
 	}
 
 	public byte[][][] readTripleByteArray() {
 		return ComUtil.toTripleByteArray(read());
 	}
 
-	public byte[][][] readTripleByteArrayAndDec() {
-		return ComUtil.toTripleByteArray(readAndDec());
-	}
-
 	public int[] readIntArray() {
 		return ComUtil.toIntArray(read());
-	}
-
-	public int[] readIntArrayAndDec() {
-		return ComUtil.toIntArray(readAndDec());
 	}
 
 	public int[][] readDoubleIntArray() {
 		return ComUtil.toDoubleIntArray(read());
 	}
 
-	public int[][] readDoubleIntArrayAndDec() {
-		return ComUtil.toDoubleIntArray(readAndDec());
-	}
-
 	public ArrayList<byte[]> readArrayList() {
 		return ComUtil.toArrayList(read());
-	}
-
-	public ArrayList<byte[]> readArrayListAndDec() {
-		return ComUtil.toArrayList(readAndDec());
 	}
 
 	/**

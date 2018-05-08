@@ -15,7 +15,7 @@ import util.Array64;
 import util.Bandwidth;
 import util.Util;
 
-// TODO: link encryption
+// TODO: link encryption, add comments
 
 public class DPFORAM {
 
