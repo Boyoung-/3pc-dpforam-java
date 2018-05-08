@@ -1,7 +1,0 @@
-tau: 3					# tau
-addrBits: 12			# bit length of record address
-w: 3					# number of tuples in each bucket
-dBytes: 4 				# record D bytes in the last tree
-
-insert: 100				# number of records to be initially inserted (-1 means insert max number)
-stash: 32				# stash size

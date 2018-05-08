@@ -6,6 +6,8 @@ import org.bouncycastle.util.Arrays;
 
 import communication.Communication;
 import crypto.Crypto;
+import fss.FSS1Bit;
+import fss.FSSKey;
 import struct.Party;
 import subprotocols.InsLbl;
 import subprotocols.SSOT;

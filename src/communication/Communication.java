@@ -17,12 +17,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang3.SerializationUtils;
 
-import com.oblivm.backend.gc.GCSignal;
-
 import crypto.SimpleAES;
-import oram.Bucket;
-import oram.Global;
-import oram.Tuple;
+import struct.Global;
 import util.Array64;
 import util.Bandwidth;
 import util.StopWatch;
@@ -438,78 +434,6 @@ public class Communication {
 		write(bandwidth, ComUtil.serialize(arr));
 	}
 
-	public void write(Tuple t) {
-		write(ComUtil.serialize(t));
-	}
-
-	public void write(Bandwidth bandwidth, Tuple t) {
-		write(bandwidth, ComUtil.serialize(t));
-	}
-
-	public void write(Tuple[] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, Tuple[] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
-	public void write(Bucket b) {
-		write(b.getTuples());
-	}
-
-	public void write(Bandwidth bandwidth, Bucket b) {
-		write(bandwidth, b.getTuples());
-	}
-
-	public void write(Bucket[] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, Bucket[] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
-	public void write(GCSignal key) {
-		write(key.bytes);
-	}
-
-	public void write(Bandwidth bandwidth, GCSignal key) {
-		write(bandwidth, key.bytes);
-	}
-
-	public void write(GCSignal[] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, GCSignal[] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
-	public void write(GCSignal[][] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, GCSignal[][] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
-	public void write(GCSignal[][][] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, GCSignal[][][] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
-	public void write(GCSignal[][][][] arr) {
-		write(ComUtil.serialize(arr));
-	}
-
-	public void write(Bandwidth bandwidth, GCSignal[][][][] arr) {
-		write(bandwidth, ComUtil.serialize(arr));
-	}
-
 	public void write(ArrayList<byte[]> arr) {
 		write(ComUtil.serialize(arr));
 	}
@@ -679,78 +603,6 @@ public class Communication {
 
 	public int[][] readDoubleIntArrayAndDec() {
 		return ComUtil.toDoubleIntArray(readAndDec());
-	}
-
-	public Tuple readTuple() {
-		return ComUtil.toTuple(read());
-	}
-
-	public Tuple readTupleAndDec() {
-		return ComUtil.toTuple(readAndDec());
-	}
-
-	public Tuple[] readTupleArray() {
-		return ComUtil.toTupleArray(read());
-	}
-
-	public Tuple[] readTupleArrayAndDec() {
-		return ComUtil.toTupleArray(readAndDec());
-	}
-
-	public Bucket readBucket() {
-		return new Bucket(readTupleArray());
-	}
-
-	public Bucket readBucketAndDec() {
-		return new Bucket(readTupleArrayAndDec());
-	}
-
-	public Bucket[] readBucketArray() {
-		return ComUtil.toBucketArray(read());
-	}
-
-	public Bucket[] readBucketArrayAndDec() {
-		return ComUtil.toBucketArray(readAndDec());
-	}
-
-	public GCSignal readGCSignal() {
-		return new GCSignal(read());
-	}
-
-	public GCSignal readGCSignalAndDec() {
-		return new GCSignal(readAndDec());
-	}
-
-	public GCSignal[] readGCSignalArray() {
-		return ComUtil.toGCSignalArray(read());
-	}
-
-	public GCSignal[] readGCSignalArrayAndDec() {
-		return ComUtil.toGCSignalArray(readAndDec());
-	}
-
-	public GCSignal[][] readDoubleGCSignalArray() {
-		return ComUtil.toDoubleGCSignalArray(read());
-	}
-
-	public GCSignal[][] readDoubleGCSignalArrayAndDec() {
-		return ComUtil.toDoubleGCSignalArray(readAndDec());
-	}
-
-	public GCSignal[][][] readTripleGCSignalArray() {
-		return ComUtil.toTripleGCSignalArray(read());
-	}
-
-	public GCSignal[][][] readTripleGCSignalArrayAndDec() {
-		return ComUtil.toTripleGCSignalArray(readAndDec());
-	}
-
-	public GCSignal[][][][] readQuadGCSignalArray() {
-		return ComUtil.toQuadGCSignalArray(read());
-	}
-
-	public GCSignal[][][][] readQuadGCSignalArrayAndDec() {
-		return ComUtil.toQuadGCSignalArray(readAndDec());
 	}
 
 	public ArrayList<byte[]> readArrayList() {

@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import communication.Communication;
 import crypto.Crypto;
-import oram.Global;
+import struct.Global;
 import struct.Party;
 import util.Bandwidth;
 import util.StopWatch;
@@ -13,6 +13,8 @@ import util.Util;
 public class RunORAM {
 
 	public static void testAccess(int tau, int logN, int DBytes, Party party, Communication[] cons) {
+		System.out.println("tau=" + tau + ", logN=" + logN + ", DBytes=" + DBytes);
+
 		StopWatch timer = new StopWatch("Runtime");
 		Bandwidth bandwidth = new Bandwidth("Bandwidth");
 

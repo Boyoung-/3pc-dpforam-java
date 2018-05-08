@@ -5,7 +5,7 @@
   </target>
 
   <target name="compile" depends="init" >
-    <javac srcdir="src:test:ObliVMGC" destdir="bin" debug="on" debuglevel="lines,vars,source" source="1.8" includeantruntime="false">
+    <javac srcdir="src" destdir="bin" debug="on" debuglevel="lines,vars,source" source="1.8" includeantruntime="false">
       <classpath>
       	<pathelement location="lib/argparse4j-0.1.0.jar"/>
         <pathelement location="lib/bcprov-jdk15on-151.jar"/>

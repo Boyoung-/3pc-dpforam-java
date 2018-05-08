@@ -1,33 +1,19 @@
 package subprotocols;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import communication.Communication;
 import crypto.Crypto;
-import exceptions.NoSuchPartyException;
-import oram.Forest;
-import oram.Metadata;
-import protocols.Protocol;
-import struct.Party;
 import util.Util;
 
-public class InsLbl extends Protocol {
+public class InsLbl {
 
+	Communication con1;
+	Communication con2;
 	SecureRandom sr1;
 	SecureRandom sr2;
 
-	public InsLbl(Communication con1, Communication con2) {
-		super(con1, con2);
-	}
-
 	public InsLbl(Communication con1, Communication con2, SecureRandom sr1, SecureRandom sr2) {
-		super(con1, con2);
-		this.sr1 = sr1;
-		this.sr2 = sr2;
-	}
-
-	public void reinit(Communication con1, Communication con2, SecureRandom sr1, SecureRandom sr2) {
 		this.con1 = con1;
 		this.con2 = con2;
 		this.sr1 = sr1;
@@ -121,73 +107,5 @@ public class InsLbl extends Protocol {
 		Util.setXor(pstar, s2);
 
 		return pstar;
-	}
-
-	@Override
-	public void run(Party party, Metadata md, Forest[] forest) {
-
-		for (int j = 0; j < 100; j++) {
-			int ttp = (int) Math.pow(2, 8);
-			int l = 10;
-			int dN1 = Crypto.sr.nextInt(ttp);
-			int dN2 = Crypto.sr.nextInt(ttp);
-			byte[] L1 = Util.nextBytes(l, Crypto.sr);
-			byte[] L2 = Util.nextBytes(l, Crypto.sr);
-
-			if (party == Party.Eddie) {
-				this.reinit(con1, con2, Crypto.sr_DE, Crypto.sr_CE);
-
-				this.runP1(dN1, L1, ttp);
-				con1.write(dN1);
-				con1.write(L1);
-
-			} else if (party == Party.Debbie) {
-				this.reinit(con1, con2, Crypto.sr_DE, Crypto.sr_CD);
-
-				byte[] m1 = this.runP2(dN2, L2, ttp);
-				byte[] m2 = con2.read();
-				dN1 = con1.readInt();
-				L1 = con1.read();
-				int dN = dN1 ^ dN2;
-				byte[] L = Util.xor(L1, L2);
-				byte[] M = Util.xor(m1, m2);
-				byte[] expectL = Arrays.copyOfRange(M, dN * l, dN * l + l);
-
-				boolean fail = false;
-				if (!Util.equal(L, expectL)) {
-					System.err.println(j + ": InsLbl test failed on L");
-					fail = true;
-				}
-				for (int i = 0; i < dN * l; i++) {
-					if (M[i] != 0) {
-						System.err.println(j + ": InsLbl test failed 1");
-						fail = true;
-						break;
-					}
-				}
-				for (int i = dN * l + l; i < M.length; i++) {
-					if (M[i] != 0) {
-						System.err.println(j + ": InsLbl test failed 2");
-						fail = true;
-						break;
-					}
-				}
-				if (!fail)
-					System.out.println(j + ": InsLbl test passed");
-
-			} else if (party == Party.Charlie) {
-				this.reinit(con1, con2, Crypto.sr_CE, Crypto.sr_CD);
-
-				byte[] m2 = this.runP3(ttp, l);
-				con2.write(m2);
-
-			} else {
-				throw new NoSuchPartyException(party + "");
-			}
-		}
-	}
-
-	@Override
-	public void run(Party party, Metadata md, Forest forest) {
 	}
 }

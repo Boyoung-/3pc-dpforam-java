@@ -19,6 +19,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import exceptions.IllegalInputException;
 
+// TODO: find a way to isolate key init out of compute()??
+
 public class PRG {
 	private Cipher cipher;
 	private SecretKeySpec skey;
