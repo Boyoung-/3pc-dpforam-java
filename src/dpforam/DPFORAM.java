@@ -375,15 +375,15 @@ public class DPFORAM {
 		int memBytes = numChunk * chunkBytes;
 
 		if (party == Party.Eddie) {
-			inslbl = new InsLbl(cons[0], cons[1], Crypto.sr_DE, Crypto.sr_CE);
-			inslbl.runP1(idx_23[0] ^ idx_23[1], Util.xor(delta_23[0], delta_23[1]), numChunk);
+			inslbl = new InsLbl(cons[0], cons[1]);
+			inslbl.runE(idx_23[0] ^ idx_23[1], Util.xor(delta_23[0], delta_23[1]), numChunk);
 
 			mem_23[0] = Util.nextBytes(memBytes, Crypto.sr_DE);
 			mem_23[1] = Util.nextBytes(memBytes, Crypto.sr_CE);
 
 		} else if (party == Party.Debbie) {
-			inslbl = new InsLbl(cons[1], cons[0], Crypto.sr_DE, Crypto.sr_CD);
-			byte[] mem_12 = inslbl.runP2(idx_23[0], delta_23[0], numChunk);
+			inslbl = new InsLbl(cons[1], cons[0]);
+			byte[] mem_12 = inslbl.runD(idx_23[0], delta_23[0], numChunk);
 
 			mem_23[1] = Util.nextBytes(memBytes, Crypto.sr_DE);
 			mem_23[0] = Util.xor(mem_12, mem_23[1]);
@@ -391,8 +391,8 @@ public class DPFORAM {
 			Util.setXor(mem_23[0], cons[0].read());
 
 		} else if (party == Party.Charlie) {
-			inslbl = new InsLbl(cons[0], cons[1], Crypto.sr_CE, Crypto.sr_CD);
-			byte[] mem_12 = inslbl.runP3(numChunk, chunkBytes);
+			inslbl = new InsLbl(cons[0], cons[1]);
+			byte[] mem_12 = inslbl.runC(numChunk, chunkBytes);
 
 			mem_23[0] = Util.nextBytes(memBytes, Crypto.sr_CE);
 			mem_23[1] = Util.xor(mem_12, mem_23[0]);

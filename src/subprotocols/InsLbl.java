@@ -1,7 +1,5 @@
 package subprotocols;
 
-import java.security.SecureRandom;
-
 import communication.Communication;
 import crypto.Crypto;
 import util.Util;
@@ -10,24 +8,20 @@ public class InsLbl {
 
 	Communication con1;
 	Communication con2;
-	SecureRandom sr1;
-	SecureRandom sr2;
 
-	public InsLbl(Communication con1, Communication con2, SecureRandom sr1, SecureRandom sr2) {
+	public InsLbl(Communication con1, Communication con2) {
 		this.con1 = con1;
 		this.con2 = con2;
-		this.sr1 = sr1;
-		this.sr2 = sr2;
 	}
 
-	public void runP1(int dN1, byte[] L1, int ttp) {
+	public void runE(int dN1, byte[] L1, int ttp) {
 		int l = L1.length;
 
-		byte[] p = Util.nextBytes(ttp * l, sr1);
-		byte[] a = Util.nextBytes(ttp * l, sr1);
-		byte[] b = Util.nextBytes(ttp * l, sr1);
-		int v = sr1.nextInt(ttp);
-		int w = sr1.nextInt(ttp);
+		byte[] p = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		byte[] a = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		byte[] b = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		int v = Crypto.sr_DE.nextInt(ttp);
+		int w = Crypto.sr_DE.nextInt(ttp);
 
 		int alpha1 = Crypto.sr.nextInt(ttp);
 		int u1 = alpha1 ^ v;
@@ -56,14 +50,14 @@ public class InsLbl {
 		return;
 	}
 
-	public byte[] runP2(int dN2, byte[] L2, int ttp) {
+	public byte[] runD(int dN2, byte[] L2, int ttp) {
 		int l = L2.length;
 
-		byte[] p = Util.nextBytes(ttp * l, sr1);
-		byte[] a = Util.nextBytes(ttp * l, sr1);
-		byte[] b = Util.nextBytes(ttp * l, sr1);
-		int v = sr1.nextInt(ttp);
-		int w = sr1.nextInt(ttp);
+		byte[] p = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		byte[] a = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		byte[] b = Util.nextBytes(ttp * l, Crypto.sr_DE);
+		int v = Crypto.sr_DE.nextInt(ttp);
+		int w = Crypto.sr_DE.nextInt(ttp);
 
 		int beta2 = Crypto.sr.nextInt(ttp);
 		int u2 = beta2 ^ w;
@@ -91,7 +85,7 @@ public class InsLbl {
 		return z2;
 	}
 
-	public byte[] runP3(int ttp, int l) {
+	public byte[] runC(int ttp, int l) {
 		int u1 = con1.readInt();
 		byte[] pstar = con1.read();
 		int u2 = con2.readInt();
