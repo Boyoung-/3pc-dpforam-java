@@ -234,14 +234,14 @@ public class DPFORAM {
 		return block_23;
 	}
 
-	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<byte[]> fssout) {
+	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<Byte>[] fssout) {
 		byte[][] newBlock_23 = new byte[2][];
 		newBlock_23[0] = Util.xor(block_23[0], deltaBlock_23[0]);
 		newBlock_23[1] = Util.xor(block_23[1], deltaBlock_23[1]);
 
 		for (int i = 0; i < 2; i++) {
 			for (long j = 0; j < N; j++) {
-				if (fssout.get(j)[i] == 1) {
+				if (fssout[i].get(j).byteValue() == 1) {
 					Util.setXor(WOM.get(j), deltaBlock_23[i]);
 				}
 			}
@@ -298,16 +298,20 @@ public class DPFORAM {
 	}
 
 	class PIROut {
-		Array64<byte[]> t;
+		Array64<Byte>[] t;
 		public byte[][] rec_23;
 
-		public PIROut(Array64<byte[]> t, byte[][] rec_23) {
+		public PIROut(Array64<Byte>[] t, byte[][] rec_23) {
 			this.t = t;
 			this.rec_23 = rec_23;
 		}
 	}
 
 	private PIROut blockPIR(long[] addr_23, Array64<byte[]>[] mem_23) {
+		long mask = (1 << logN) - 1;
+		addr_23[0] &= mask;
+		addr_23[1] &= mask;
+
 		FSSKey[] keys = fss.Gen(addr_23[0] ^ addr_23[1], logN);
 		cons[0].write(keys[0]);
 		cons[1].write(keys[1]);
@@ -315,12 +319,12 @@ public class DPFORAM {
 		keys[0] = (FSSKey) cons[1].readObject();
 
 		byte[] rec_13 = new byte[DBytes];
-		Array64<byte[]> t = new Array64<byte[]>(N);
-		for (long j = 0; j < N; j++) {
-			t.set(j, new byte[2]);
-			for (int i = 0; i < 2; i++) {
-				t.get(j)[i] = fss.Eval(keys[i], j ^ addr_23[i], logN);
-				if (t.get(j)[i] == 1) {
+		@SuppressWarnings("unchecked")
+		Array64<Byte>[] t = (Array64<Byte>[]) new Array64[2];
+		for (int i = 0; i < 2; i++) {
+			t[i] = fss.EvalAllWithShift(keys[i], logN, addr_23[i]);
+			for (long j = 0; j < N; j++) {
+				if (t[i].get(j).byteValue() == 1) {
 					Util.setXor(rec_13, mem_23[i].get(j));
 				}
 			}
@@ -343,9 +347,9 @@ public class DPFORAM {
 
 		byte[] rec_13 = new byte[nextLogNBytes];
 		for (int i = 0; i < 2; i++) {
+			Array64<Byte> fssout = fss.EvalAll(keys[i], tau);
 			for (int j = 0; j < ttp; j++) {
-				byte fssout = fss.Eval(keys[i], j ^ idx_23[i], tau);
-				if (fssout == 1) {
+				if (fssout.get(j ^ idx_23[i]).byteValue() == 1) {
 					Util.setXor(rec_13, Arrays.copyOfRange(block_23[i], j * nextLogNBytes, (j + 1) * nextLogNBytes));
 				}
 			}
