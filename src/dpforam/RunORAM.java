@@ -1,6 +1,8 @@
 package dpforam;
 
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Set;
 
 import communication.Communication;
 import crypto.Crypto;
@@ -23,13 +25,23 @@ public class RunORAM {
 
 		int numTestAddr = 11;
 		int eachAddrIter = 100;
+		if (numTestAddr > dpforam.N) {
+			System.err.println("Doesn't have " + numTestAddr + " different addr to test");
+			return;
+		}
+
+		Set<Long> testedAddr = new HashSet<Long>();
 
 		for (int t = 0; t < numTestAddr; t++) {
 			if (t == 1)
 				timer.reset();
 
-			long addr = Util.nextLong(dpforam.N, Crypto.sr);
+			long addr = 0;
 			if (party == Party.Eddie) {
+				addr = Util.nextLong(dpforam.N, Crypto.sr);
+				while (testedAddr.contains(addr))
+					addr = Util.nextLong(dpforam.N, Crypto.sr);
+				testedAddr.add(addr);
 				cons[0].write(addr);
 				cons[1].write(addr);
 			} else if (party == Party.Debbie) {
@@ -87,10 +99,6 @@ public class RunORAM {
 		}
 
 		System.out.println("Test access() done.");
-		// TODO: not test on same addr twice when access = write
-		System.out.println("Note: if some addr is tested twice,");
-		System.out.println("then the first read of the second test run will print ERROR,");
-		System.out.println("which is correct, becasue we are doing access = write");
 		System.out.println();
 
 		cons[0].write(bandwidth);
