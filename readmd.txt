@@ -1,1 +1,10 @@
 Three-Party DORAM Implementation
+
+Setup:
+$ sudo apt-get install ant
+$ ant
+
+Sample Run:
+$ scripts/eddie.sh &
+$ scripts/debbie.sh &
+$ scripts/charlie.sh &

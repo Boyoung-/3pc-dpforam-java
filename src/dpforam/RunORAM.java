@@ -108,6 +108,7 @@ public class RunORAM {
 		timer2.elapsedWC = Math.max(Math.max(timer2.elapsedWC, timer1.elapsedWC), timer.elapsedWC);
 
 		int iterations = (numTestAddr - 1) * eachAddrIter;
+		System.out.println("tau=" + tau + ", logN=" + logN + ", DBytes=" + DBytes);
 		System.out.println("Runtime is total of " + iterations + " accesses.");
 		System.out.println("Bandwidth is 1 access.");
 		System.out.println("===== this party only =====");
