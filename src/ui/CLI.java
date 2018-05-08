@@ -54,7 +54,7 @@ public class CLI {
 		String debbieIp = cmd.getOptionValue("debbie_ip", DEFAULT_IP);
 
 		int tau = 3;
-		int logN = 9;
+		int logN = 12;
 		int DBytes = 4;
 
 		// For now all logic happens here. Eventually this will get wrapped

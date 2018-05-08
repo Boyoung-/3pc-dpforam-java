@@ -10,9 +10,10 @@ import struct.Party;
 import subprotocols.InsLbl;
 import subprotocols.SSOT;
 import util.Array64;
+import util.Bandwidth;
 import util.Util;
 
-// TODO: measure bandwidth, time
+// TODO: link encryption
 
 public class DPFORAM {
 
@@ -31,6 +32,7 @@ public class DPFORAM {
 	public final boolean isFirst;
 	public final boolean isLast;
 	public final Party party;
+	public final Bandwidth bandwidth;
 
 	private final Communication[] cons;
 	private final Array64<byte[]>[] ROM;
@@ -41,12 +43,14 @@ public class DPFORAM {
 	private long stashCtr;
 
 	@SuppressWarnings("unchecked")
-	public DPFORAM(int tau, int logN, int DBytes, boolean isLast, Party party, Communication[] cons) {
+	public DPFORAM(int tau, int logN, int DBytes, boolean isLast, Party party, Communication[] cons,
+			Bandwidth bandwidth) {
 		this.tau = tau;
 		this.logN = logN;
 		this.isLast = isLast;
 		this.party = party;
 		this.cons = cons;
+		this.bandwidth = bandwidth;
 
 		ttp = (int) Math.pow(2, tau);
 		logNBytes = (logN + 7) / 8 + 1;
@@ -60,7 +64,7 @@ public class DPFORAM {
 		WOM = isFirst ? null : new Array64<byte[]>(N);
 		stash = isFirst ? null : ((Array64<byte[]>[]) new Array64[] { new Array64<byte[]>(N), new Array64<byte[]>(N) });
 
-		posMap = isFirst ? null : new DPFORAM(tau, logN - tau, 0, false, party, cons);
+		posMap = isFirst ? null : new DPFORAM(tau, logN - tau, 0, false, party, cons, bandwidth);
 
 		if (isLast)
 			init();
@@ -136,7 +140,7 @@ public class DPFORAM {
 		for (long i = 0; i < N; i++) {
 			ROM[0].set(i, WOM.get(i).clone());
 		}
-		cons[0].write(WOM);
+		cons[0].write(bandwidth, WOM);
 		ROM[1] = cons[1].readArray64ByteArray();
 	}
 
@@ -204,7 +208,7 @@ public class DPFORAM {
 
 			block_23[0] = Util.nextBytes(DBytes, Crypto.sr_DE);
 			block_23[1] = Util.xor(block_12, block_23[0]);
-			cons[1].write(block_23[1]);
+			cons[1].write(bandwidth, block_23[1]);
 			Util.setXor(block_23[1], cons[1].read());
 
 		} else if (party == Party.Debbie) {
@@ -225,7 +229,7 @@ public class DPFORAM {
 
 			block_23[1] = Util.nextBytes(DBytes, Crypto.sr_CD);
 			block_23[0] = Util.xor(block_12, block_23[1]);
-			cons[0].write(block_23[0]);
+			cons[0].write(bandwidth, block_23[0]);
 			Util.setXor(block_23[0], cons[0].read());
 
 		} else {
@@ -313,8 +317,8 @@ public class DPFORAM {
 		addr_23[1] &= mask;
 
 		FSSKey[] keys = fss.Gen(addr_23[0] ^ addr_23[1], logN);
-		cons[0].write(keys[0]);
-		cons[1].write(keys[1]);
+		cons[0].write(bandwidth, keys[0]);
+		cons[1].write(bandwidth, keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
 
@@ -332,7 +336,7 @@ public class DPFORAM {
 
 		byte[][] rec_23 = new byte[2][];
 		rec_23[0] = rec_13;
-		cons[0].write(rec_23[0]);
+		cons[0].write(bandwidth, rec_23[0]);
 		rec_23[1] = cons[1].read();
 
 		return new PIROut(t, rec_23);
@@ -340,8 +344,8 @@ public class DPFORAM {
 
 	private byte[][] ptrPIR(int[] idx_23, byte[][] block_23) {
 		FSSKey[] keys = fss.Gen(idx_23[0] ^ idx_23[1], tau);
-		cons[0].write(keys[0]);
-		cons[1].write(keys[1]);
+		cons[0].write(bandwidth, keys[0]);
+		cons[1].write(bandwidth, keys[1]);
 		keys[1] = (FSSKey) cons[0].readObject();
 		keys[0] = (FSSKey) cons[1].readObject();
 
@@ -357,7 +361,7 @@ public class DPFORAM {
 
 		byte[][] rec_23 = new byte[2][];
 		rec_23[0] = rec_13;
-		cons[0].write(rec_23[0]);
+		cons[0].write(bandwidth, rec_23[0]);
 		rec_23[1] = cons[1].read();
 
 		return rec_23;
@@ -381,7 +385,7 @@ public class DPFORAM {
 
 			mem_23[1] = Util.nextBytes(memBytes, Crypto.sr_DE);
 			mem_23[0] = Util.xor(mem_12, mem_23[1]);
-			cons[0].write(mem_23[0]);
+			cons[0].write(bandwidth, mem_23[0]);
 			Util.setXor(mem_23[0], cons[0].read());
 
 		} else if (party == Party.Charlie) {
@@ -390,7 +394,7 @@ public class DPFORAM {
 
 			mem_23[0] = Util.nextBytes(memBytes, Crypto.sr_CE);
 			mem_23[1] = Util.xor(mem_12, mem_23[0]);
-			cons[1].write(mem_23[1]);
+			cons[1].write(bandwidth, mem_23[1]);
 			Util.setXor(mem_23[1], cons[1].read());
 
 		} else {

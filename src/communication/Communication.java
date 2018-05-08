@@ -334,9 +334,9 @@ public class Communication {
 	}
 
 	public void write(Bandwidth bandwidth, byte[] out) {
-		comEnc.start();
-		out = aes.encrypt(out);
-		comEnc.stop();
+		// comEnc.start();
+		// out = aes.encrypt(out);
+		// comEnc.stop();
 
 		write(out);
 
@@ -369,6 +369,16 @@ public class Communication {
 		for (int i = 0; i < len; i++) {
 			Object[] b = array.getChunk(i);
 			write(b);
+		}
+	}
+
+	public void write(Bandwidth bandwidth, Array64<byte[]> array) {
+		write(bandwidth, array.size());
+		int len = array.numChunks();
+		write(bandwidth, len);
+		for (int i = 0; i < len; i++) {
+			Object[] b = array.getChunk(i);
+			write(bandwidth, b);
 		}
 	}
 

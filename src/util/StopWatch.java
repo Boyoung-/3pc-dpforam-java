@@ -1,11 +1,14 @@
 package util;
 
+import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 import exceptions.StopWatchException;
 
-public class StopWatch {
+public class StopWatch implements Serializable {
+
+	private static final long serialVersionUID = 1073170252568653271L;
 
 	private String task;
 	private long startWC;

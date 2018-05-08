@@ -1,8 +1,12 @@
 package util;
 
+import java.io.Serializable;
+
 import exceptions.BandwidthException;
 
-public class Bandwidth {
+public class Bandwidth implements Serializable {
+
+	private static final long serialVersionUID = -5318086786286085625L;
 
 	public String task;
 	public long bandwidth;
