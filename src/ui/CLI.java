@@ -57,7 +57,7 @@ public class CLI {
 		String debbieIp = cmd.getOptionValue("debbie_ip", DEFAULT_IP);
 
 		String tau_string = cmd.getOptionValue("tau", "3");
-		String logN_string = cmd.getOptionValue("logN", "12");
+		String logN_string = cmd.getOptionValue("logN", "9");
 		String DBytes_string = cmd.getOptionValue("DBytes", "4");
 
 		int tau = Integer.parseInt(tau_string);

@@ -15,7 +15,9 @@ import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SerializationUtils;
+import org.bouncycastle.util.Arrays;
 
 import crypto.SimpleAES;
 import struct.Global;
@@ -353,22 +355,22 @@ public class Communication {
 		write(bandwidth, SerializationUtils.serialize((Serializable) out));
 	}
 
-	// TODO: reduce num of writes
 	public void write(Array64<byte[]> array) {
-		write(array.size());
 		int len = array.numChunks();
-		write(len);
+		byte[] size_bytes = BigInteger.valueOf(array.size()).toByteArray();
+		byte[] len_bytes = Util.intToBytes(len);
+		write(ArrayUtils.addAll(size_bytes, len_bytes));
 		for (int i = 0; i < len; i++) {
 			Object[] b = array.getChunk(i);
 			write(b);
 		}
 	}
 
-	// TODO: reduce num of writes
 	public void write(Bandwidth bandwidth, Array64<byte[]> array) {
-		write(bandwidth, array.size());
 		int len = array.numChunks();
-		write(bandwidth, len);
+		byte[] size_bytes = BigInteger.valueOf(array.size()).toByteArray();
+		byte[] len_bytes = Util.intToBytes(len);
+		write(bandwidth, ArrayUtils.addAll(size_bytes, len_bytes));
 		for (int i = 0; i < len; i++) {
 			Object[] b = array.getChunk(i);
 			write(bandwidth, b);
@@ -441,8 +443,6 @@ public class Communication {
 
 	public static final Charset defaultCharset = Charset.forName("ASCII");
 
-	// TODO: Rather than having millions of write/read methods can we take
-	// advantage of DataStreams?
 	public void write(String buffer) {
 		write(buffer, defaultCharset);
 	}
@@ -527,8 +527,12 @@ public class Communication {
 	}
 
 	public Array64<byte[]> readArray64ByteArray() {
-		long size = readLong();
-		int len = readInt();
+		byte[] metadata = read();
+		int midpoint = metadata.length - 4;
+		byte[] size_bytes = Arrays.copyOfRange(metadata, 0, midpoint);
+		byte[] len_bytes = Arrays.copyOfRange(metadata, midpoint, metadata.length);
+		long size = new BigInteger(1, size_bytes).longValue();
+		int len = Util.bytesToInt(len_bytes);
 		Object[][] data = new Object[len][];
 		for (int i = 0; i < len; i++)
 			data[i] = this.readObject();
@@ -718,10 +722,8 @@ public class Communication {
 			mmSocket = socket;
 			DataInputStream tmpIn = null;
 			DataOutputStream tmpOut = null;
-			mMessageBuffer = new LinkedBlockingQueue<byte[]>(); // TODO: add a
-			// capacity here
-			// to prevent
-			// doS
+			// TODO: add a capacity here to prevent doS
+			mMessageBuffer = new LinkedBlockingQueue<byte[]>();
 
 			// Get the Socket input and output streams
 			try {
@@ -792,8 +794,8 @@ public class Communication {
 				try {
 					// Read from the InputStream
 					bytes = mmInStream.readInt();
-					byte[] buffer = new byte[bytes]; // TODO: This is a little
-					// dangerous
+					// TODO: This is a little dangerous
+					byte[] buffer = new byte[bytes];
 
 					mmInStream.readFully(buffer, 0, bytes);
 
