@@ -92,6 +92,14 @@ public class StopWatch implements Serializable {
 			return task + "\n" + out;
 	}
 
+	public String WCtoMS() {
+		String out = "  WC(ms): " + elapsedWC / 1000000;
+		if (task.length() == 0)
+			return out;
+		else
+			return task + "\n" + out;
+	}
+
 	public String noPreToMS() {
 		return "\n" + (elapsedWC / 1000000) + "\n" + (elapsedCPU / 1000000);
 	}

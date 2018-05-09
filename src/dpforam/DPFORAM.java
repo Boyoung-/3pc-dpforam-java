@@ -8,6 +8,7 @@ import communication.Communication;
 import crypto.Crypto;
 import fss.FSS1Bit;
 import fss.FSSKey;
+import struct.Global;
 import struct.Party;
 import subprotocols.InsLbl;
 import subprotocols.SSOT;
@@ -16,6 +17,7 @@ import util.Bandwidth;
 import util.Util;
 
 // TODO: add comments
+// TODO: add threaded DPF.Eval() and PIW
 
 public class DPFORAM {
 
@@ -313,6 +315,17 @@ public class DPFORAM {
 		}
 	}
 
+	private void threadedSelectXor(Array64<Byte>[] t, Array64<byte[]>[] mem_23, long from, long to, int threadId,
+			byte[][] output) {
+		for (int i = 0; i < 2; i++) {
+			for (long j = from; j < to; j++) {
+				if (t[i].get(j).byteValue() == 1) {
+					Util.setXor(output[threadId], mem_23[i].get(j));
+				}
+			}
+		}
+	}
+
 	private PIROut blockPIR(long[] addr_23, Array64<byte[]>[] mem_23) {
 		long mask = (1 << logN) - 1;
 		addr_23[0] &= mask;
@@ -327,13 +340,42 @@ public class DPFORAM {
 		byte[] rec_13 = new byte[DBytes];
 		@SuppressWarnings("unchecked")
 		Array64<Byte>[] t = (Array64<Byte>[]) new Array64[2];
-		for (int i = 0; i < 2; i++) {
-			t[i] = fss.EvalAllWithShift(keys[i], logN, addr_23[i]);
-			for (long j = 0; j < N; j++) {
-				if (t[i].get(j).byteValue() == 1) {
-					Util.setXor(rec_13, mem_23[i].get(j));
+		t[0] = fss.EvalAllWithShift(keys[0], logN, addr_23[0]);
+		t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
+
+		int numThreads = (int) Math.min(N, Global.numThreads);
+		if (numThreads < 2) {
+			for (int i = 0; i < 2; i++) {
+				for (long j = 0; j < N; j++) {
+					if (t[i].get(j).byteValue() == 1) {
+						Util.setXor(rec_13, mem_23[i].get(j));
+					}
 				}
 			}
+		} else {
+			Thread[] children = new Thread[numThreads - 1];
+			long segLen = N / numThreads;
+			byte[][] output = new byte[numThreads][DBytes];
+			for (int id = 0; id < children.length; id++) {
+				final int ID = id;
+				children[id] = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						threadedSelectXor(t, mem_23, ID * segLen, (ID + 1) * segLen, ID, output);
+					}
+				});
+				children[id].start();
+			}
+			threadedSelectXor(t, mem_23, children.length * segLen, N, children.length, output);
+
+			for (int id = 0; id < children.length; id++) {
+				try {
+					children[id].join();
+				} catch (InterruptedException ignore) {
+				}
+				Util.setXor(rec_13, output[id]);
+			}
+			Util.setXor(rec_13, output[children.length]);
 		}
 
 		byte[][] rec_23 = new byte[2][];

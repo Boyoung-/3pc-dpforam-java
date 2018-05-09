@@ -11,6 +11,7 @@ import org.apache.commons.cli.ParseException;
 import communication.Communication;
 import dpforam.RunORAM;
 import exceptions.NoSuchPartyException;
+import struct.Global;
 import struct.Party;
 
 public class CLI {
@@ -26,6 +27,7 @@ public class CLI {
 		options.addOption("logN", true, "address bits");
 		options.addOption("DBytes", true, "payload bytes");
 		options.addOption("addrIter", true, "iterations on each address");
+		options.addOption("threads", true, "number of threads");
 
 		// Parse the command line arguments
 		CommandLineParser cmdParser = new GnuParser();
@@ -61,11 +63,13 @@ public class CLI {
 		String logN_string = cmd.getOptionValue("logN", "9");
 		String DBytes_string = cmd.getOptionValue("DBytes", "4");
 		String eachAddrIter_string = cmd.getOptionValue("addrIter", "10");
+		String threads_string = cmd.getOptionValue("threads", "1");
 
 		int tau = Integer.parseInt(tau_string);
 		int logN = Integer.parseInt(logN_string);
 		int DBytes = Integer.parseInt(DBytes_string);
 		int eachAddrIter = Integer.parseInt(eachAddrIter_string);
+		Global.numThreads = Integer.parseInt(threads_string);
 
 		// For now all logic happens here. Eventually this will get wrapped
 		// up in party specific classes.

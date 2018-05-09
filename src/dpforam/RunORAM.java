@@ -15,8 +15,6 @@ import util.Util;
 public class RunORAM {
 
 	public static void testAccess(int tau, int logN, int DBytes, int eachAddrIter, Party party, Communication[] cons) {
-		System.out.println("tau=" + tau + ", logN=" + logN + ", DBytes=" + DBytes);
-
 		StopWatch timer = new StopWatch("Runtime");
 		Bandwidth bandwidth = new Bandwidth("Bandwidth");
 
@@ -122,13 +120,14 @@ public class RunORAM {
 
 		int iterations = (numTestAddr - 1) * eachAddrIter;
 		System.out.println("tau=" + tau + ", logN=" + logN + ", DBytes=" + DBytes);
+		System.out.println("Number of threads: " + Global.numThreads);
 		System.out.println("Runtime is total of " + iterations + " accesses.");
 		System.out.println("Bandwidth is 1 access.");
 		System.out.println("===== this party only =====");
-		System.out.println(timer.toMS());
+		System.out.println((Global.numThreads < 2 ? timer.toMS() : timer.WCtoMS()));
 		System.out.println(bandwidth.toString());
 		System.out.println("===== all parties =====");
-		System.out.println(timer2.toMS());
+		System.out.println((Global.numThreads < 2 ? timer2.toMS() : timer2.WCtoMS()));
 		System.out.println(bandwidth2.toString());
 		System.out.println();
 	}
