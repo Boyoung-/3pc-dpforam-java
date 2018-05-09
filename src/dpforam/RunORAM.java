@@ -14,7 +14,7 @@ import util.Util;
 
 public class RunORAM {
 
-	public static void testAccess(int tau, int logN, int DBytes, Party party, Communication[] cons) {
+	public static void testAccess(int tau, int logN, int DBytes, int eachAddrIter, Party party, Communication[] cons) {
 		System.out.println("tau=" + tau + ", logN=" + logN + ", DBytes=" + DBytes);
 
 		StopWatch timer = new StopWatch("Runtime");
@@ -23,8 +23,13 @@ public class RunORAM {
 		DPFORAM dpforam = new DPFORAM(tau, logN, DBytes, true, party, cons, bandwidth);
 		dpforam.printMetadata();
 
+		byte[] zero = new byte[] { 0 };
+		cons[0].write(zero);
+		cons[1].write(zero);
+		cons[0].read();
+		cons[1].read();
+
 		int numTestAddr = 11;
-		int eachAddrIter = 100;
 		if (numTestAddr > dpforam.N) {
 			System.err.println("Doesn't have " + numTestAddr + " different addr to test");
 			return;

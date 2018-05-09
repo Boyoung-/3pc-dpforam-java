@@ -25,6 +25,7 @@ public class CLI {
 		options.addOption("tau", true, "recursion parameter");
 		options.addOption("logN", true, "address bits");
 		options.addOption("DBytes", true, "payload bytes");
+		options.addOption("addrIter", true, "iterations on each address");
 
 		// Parse the command line arguments
 		CommandLineParser cmdParser = new GnuParser();
@@ -59,10 +60,12 @@ public class CLI {
 		String tau_string = cmd.getOptionValue("tau", "3");
 		String logN_string = cmd.getOptionValue("logN", "9");
 		String DBytes_string = cmd.getOptionValue("DBytes", "4");
+		String eachAddrIter_string = cmd.getOptionValue("addrIter", "10");
 
 		int tau = Integer.parseInt(tau_string);
 		int logN = Integer.parseInt(logN_string);
 		int DBytes = Integer.parseInt(DBytes_string);
+		int eachAddrIter = Integer.parseInt(eachAddrIter_string);
 
 		// For now all logic happens here. Eventually this will get wrapped
 		// up in party specific classes.
@@ -131,7 +134,7 @@ public class CLI {
 		con1.setTcpNoDelay(true);
 		con2.setTcpNoDelay(true);
 
-		RunORAM.testAccess(tau, logN, DBytes, partyEnum, new Communication[] { con1, con2 });
+		RunORAM.testAccess(tau, logN, DBytes, eachAddrIter, partyEnum, new Communication[] { con1, con2 });
 
 		//////////////////////////////////////////////////////////////
 
