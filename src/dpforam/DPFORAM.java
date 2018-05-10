@@ -20,8 +20,6 @@ import util.Util;
 
 public class DPFORAM {
 
-	public static final int prime = 251;
-
 	public static final FSS1Bit fss = new FSS1Bit(Crypto.prgSeedBytes);
 
 	public final int logN;
@@ -76,14 +74,11 @@ public class DPFORAM {
 	private void init() {
 		initCtr();
 
-		if (isLast) {
-			initROM();
-			initWOM();
-		} else {
-			initEmpty(ROM[0]);
-			initEmpty(ROM[1]);
-			initEmpty(WOM);
-		}
+		initEmpty(ROM[0]);
+		initEmpty(ROM[1]);
+
+		initEmpty(WOM);
+
 		if (stash != null) {
 			initEmpty(stash[0]);
 			initEmpty(stash[1]);
@@ -91,36 +86,6 @@ public class DPFORAM {
 
 		if (!isFirst)
 			posMap.init();
-	}
-
-	private void initROM() {
-		if (ROM == null)
-			return;
-
-		if (party == Party.Eddie) {
-			for (long i = 0; i < N; i++) {
-				ROM[0].set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
-			}
-			initEmpty(ROM[1]);
-		} else if (party == Party.Debbie) {
-			initEmpty(ROM[0]);
-			for (long i = 0; i < N; i++) {
-				ROM[1].set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
-			}
-		} else if (party == Party.Charlie) {
-			initEmpty(ROM[0]);
-			initEmpty(ROM[1]);
-		} else {
-		}
-	}
-
-	private void initWOM() {
-		if (WOM == null)
-			return;
-
-		for (long i = 0; i < WOM.size(); i++) {
-			WOM.set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
-		}
 	}
 
 	private void initEmpty(Array64<byte[]> mem) {

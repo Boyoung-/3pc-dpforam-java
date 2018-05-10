@@ -9,6 +9,8 @@ import crypto.PRG;
 import util.Array64;
 import util.Util;
 
+// TODO: how to parallelize EvalAll()?
+
 public class FSS1Bit {
 
 	int seedBytes;
