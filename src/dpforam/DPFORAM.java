@@ -88,12 +88,41 @@ public class DPFORAM {
 			posMap.init();
 	}
 
+	private void initEmpty(Array64<byte[]> mem, long from, long to) {
+		for (long i = from; i < to; i++) {
+			mem.set(i, new byte[DBytes]);
+		}
+	}
+
 	private void initEmpty(Array64<byte[]> mem) {
 		if (mem == null)
 			return;
 
-		for (long i = 0; i < mem.size(); i++) {
-			mem.set(i, new byte[DBytes]);
+		int numThreads = (int) Math.min(mem.size(), Global.numThreads);
+		if (numThreads < 2) {
+			initEmpty(mem, 0, mem.size());
+		} else {
+			Thread[] children = new Thread[numThreads - 1];
+			long segLen = mem.size() / numThreads;
+			for (int id = 0; id < children.length; id++) {
+				final int ID = id;
+				children[id] = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						initEmpty(mem, ID * segLen, (ID + 1) * segLen);
+					}
+				});
+				children[id].start();
+			}
+			initEmpty(mem, children.length * segLen, mem.size());
+
+			for (int id = 0; id < children.length; id++) {
+				try {
+					children[id].join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
