@@ -14,8 +14,6 @@ import util.Util;
 
 public class RunORAM {
 
-	static int prime = 251;
-
 	public static void testAccess(int tau, int logN, int DBytes, int eachAddrIter, Party party, Communication[] cons) {
 		StopWatch timer = new StopWatch("Runtime");
 		Bandwidth bandwidth = new Bandwidth("Bandwidth");
@@ -56,13 +54,13 @@ public class RunORAM {
 			} else {
 			}
 
-			BigInteger expected = BigInteger.ZERO;
+			BigInteger expected = BigInteger.valueOf(addr % DPFORAM.prime);
 
 			for (int i = 0; i < eachAddrIter; i++) {
 				if (i == 1)
 					Global.bandSwitch = false;
 
-				BigInteger newVal = BigInteger.valueOf(Crypto.sr.nextInt(prime));
+				BigInteger newVal = BigInteger.valueOf(Crypto.sr.nextInt(DPFORAM.prime));
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
 					cons[1].write(newVal);

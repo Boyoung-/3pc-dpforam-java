@@ -20,6 +20,8 @@ import util.Util;
 
 public class DPFORAM {
 
+	public static final int prime = 251;
+
 	public static final FSS1Bit fss = new FSS1Bit(Crypto.prgSeedBytes);
 
 	public final int logN;
@@ -74,11 +76,14 @@ public class DPFORAM {
 	private void init() {
 		initCtr();
 
-		initEmpty(ROM[0]);
-		initEmpty(ROM[1]);
-
-		initEmpty(WOM);
-
+		if (isLast) {
+			initROM();
+			initWOM();
+		} else {
+			initEmpty(ROM[0]);
+			initEmpty(ROM[1]);
+			initEmpty(WOM);
+		}
 		if (stash != null) {
 			initEmpty(stash[0]);
 			initEmpty(stash[1]);
@@ -88,9 +93,33 @@ public class DPFORAM {
 			posMap.init();
 	}
 
-	private void initEmpty(Array64<byte[]> mem, long from, long to) {
-		for (long i = from; i < to; i++) {
-			mem.set(i, new byte[DBytes]);
+	private void initROM() {
+		if (ROM == null)
+			return;
+
+		if (party == Party.Eddie) {
+			for (long i = 0; i < N; i++) {
+				ROM[0].set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
+			}
+			initEmpty(ROM[1]);
+		} else if (party == Party.Debbie) {
+			initEmpty(ROM[0]);
+			for (long i = 0; i < N; i++) {
+				ROM[1].set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
+			}
+		} else if (party == Party.Charlie) {
+			initEmpty(ROM[0]);
+			initEmpty(ROM[1]);
+		} else {
+		}
+	}
+
+	private void initWOM() {
+		if (WOM == null)
+			return;
+
+		for (long i = 0; i < WOM.size(); i++) {
+			WOM.set(i, Util.padArray(BigInteger.valueOf(i % prime).toByteArray(), DBytes));
 		}
 	}
 
@@ -98,31 +127,8 @@ public class DPFORAM {
 		if (mem == null)
 			return;
 
-		int numThreads = (int) Math.min(mem.size(), Global.numThreads);
-		if (numThreads < 2) {
-			initEmpty(mem, 0, mem.size());
-		} else {
-			Thread[] children = new Thread[numThreads - 1];
-			long segLen = mem.size() / numThreads;
-			for (int id = 0; id < children.length; id++) {
-				final int ID = id;
-				children[id] = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						initEmpty(mem, ID * segLen, (ID + 1) * segLen);
-					}
-				});
-				children[id].start();
-			}
-			initEmpty(mem, children.length * segLen, mem.size());
-
-			for (int id = 0; id < children.length; id++) {
-				try {
-					children[id].join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+		for (long i = 0; i < mem.size(); i++) {
+			mem.set(i, new byte[DBytes]);
 		}
 	}
 
