@@ -17,7 +17,6 @@ import util.Bandwidth;
 import util.Util;
 
 // TODO: add comments
-// TODO: add threaded DPF.Eval()
 
 public class DPFORAM {
 
@@ -361,19 +360,13 @@ public class DPFORAM {
 		}
 	}
 
-	private void fssEvalForPIR(FSSKey keys, long from, long to, long addr_23, Array64<Byte> t) {
-		for (long j = from; j < to; j++) {
-			t.set(j, fss.Eval(keys, j ^ addr_23, logN));
-		}
-	}
-
 	private void threadedFssEval(FSSKey[] keys, long[] addr_23, Array64<Byte>[] t) {
 		int numThreads = Global.numThreads;
 		if (numThreads < 2) {
 			t[0] = fss.EvalAllWithShift(keys[0], logN, addr_23[0]);
 			t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
 
-		} else if (numThreads <= fss.getLevels(logN)) {
+		} else {
 			Thread child = new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -384,50 +377,6 @@ public class DPFORAM {
 			t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
 			try {
 				child.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-		} else {
-			t[0] = new Array64<Byte>(N);
-			t[1] = new Array64<Byte>(N);
-			int halfThreads = numThreads / 2;
-			Thread[][] children = new Thread[2][halfThreads - 1];
-			int last = children[0].length;
-			long segLen = N / halfThreads;
-			for (int i = 0; i < 2; i++) {
-				final int I = i;
-				for (int j = 0; j < last; j++) {
-					final int J = j;
-					children[i][j] = new Thread(new Runnable() {
-						@Override
-						public void run() {
-							fssEvalForPIR(keys[I], J * segLen, (J + 1) * segLen, addr_23[I], t[I]);
-						}
-					});
-					children[i][j].start();
-				}
-			}
-			Thread lastChild = new Thread(new Runnable() {
-				@Override
-				public void run() {
-					fssEvalForPIR(keys[0], last * segLen, N, addr_23[0], t[0]);
-				}
-			});
-			lastChild.start();
-			fssEvalForPIR(keys[1], last * segLen, N, addr_23[1], t[1]);
-
-			for (int i = 0; i < 2; i++) {
-				for (int j = 0; j < last; j++) {
-					try {
-						children[i][j].join();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			try {
-				lastChild.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
