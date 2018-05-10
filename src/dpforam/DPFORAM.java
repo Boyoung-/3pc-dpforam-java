@@ -361,6 +361,79 @@ public class DPFORAM {
 		}
 	}
 
+	private void fssEvalForPIR(FSSKey keys, long from, long to, long addr_23, Array64<Byte> t) {
+		for (long j = from; j < to; j++) {
+			t.set(j, fss.Eval(keys, j ^ addr_23, logN));
+		}
+	}
+
+	private void threadedFssEval(FSSKey[] keys, long[] addr_23, Array64<Byte>[] t) {
+		int numThreads = Global.numThreads;
+		if (numThreads < 2) {
+			t[0] = fss.EvalAllWithShift(keys[0], logN, addr_23[0]);
+			t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
+
+		} else if (numThreads <= fss.getLevels(logN)) {
+			Thread child = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					t[0] = fss.EvalAllWithShift(keys[0], logN, addr_23[0]);
+				}
+			});
+			child.start();
+			t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
+			try {
+				child.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		} else {
+			t[0] = new Array64<Byte>(N);
+			t[1] = new Array64<Byte>(N);
+			int halfThreads = numThreads / 2;
+			Thread[][] children = new Thread[2][halfThreads - 1];
+			int last = children[0].length;
+			long segLen = N / halfThreads;
+			for (int i = 0; i < 2; i++) {
+				final int I = i;
+				for (int j = 0; j < last; j++) {
+					final int J = j;
+					children[i][j] = new Thread(new Runnable() {
+						@Override
+						public void run() {
+							fssEvalForPIR(keys[I], J * segLen, (J + 1) * segLen, addr_23[I], t[I]);
+						}
+					});
+					children[i][j].start();
+				}
+			}
+			Thread lastChild = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					fssEvalForPIR(keys[0], last * segLen, N, addr_23[0], t[0]);
+				}
+			});
+			lastChild.start();
+			fssEvalForPIR(keys[1], last * segLen, N, addr_23[1], t[1]);
+
+			for (int i = 0; i < 2; i++) {
+				for (int j = 0; j < last; j++) {
+					try {
+						children[i][j].join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			try {
+				lastChild.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private PIROut blockPIR(long[] addr_23, Array64<byte[]>[] mem_23) {
 		long mask = (1 << logN) - 1;
 		addr_23[0] &= mask;
@@ -375,8 +448,9 @@ public class DPFORAM {
 		byte[] rec_13 = new byte[DBytes];
 		@SuppressWarnings("unchecked")
 		Array64<Byte>[] t = (Array64<Byte>[]) new Array64[2];
-		t[0] = fss.EvalAllWithShift(keys[0], logN, addr_23[0]);
-		t[1] = fss.EvalAllWithShift(keys[1], logN, addr_23[1]);
+		threadedFssEval(keys, addr_23, t);
+
+		///////////////////////////////////////////////////////
 
 		int numThreads = (int) Math.min(N, Global.numThreads);
 		if (numThreads < 2) {

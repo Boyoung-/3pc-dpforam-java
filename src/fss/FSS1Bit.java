@@ -25,6 +25,10 @@ public class FSS1Bit {
 		return (int) Math.floor(Math.log(n) / Math.log(2));
 	}
 
+	public int getLevels(int m) {
+		return Math.max(1, m - ETBits);
+	}
+
 	private long reverse(long n, int bits) {
 		long res = 0;
 		for (int i = 0; i < bits; i++) {
