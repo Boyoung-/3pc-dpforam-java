@@ -17,7 +17,7 @@ import util.Bandwidth;
 import util.Util;
 
 // TODO: add comments
-// TODO: add threaded DPF.Eval() and PIW
+// TODO: add threaded DPF.Eval()
 
 public class DPFORAM {
 
@@ -242,15 +242,50 @@ public class DPFORAM {
 		return block_23;
 	}
 
+	private void selectXorForPIW(Array64<Byte>[] fssout, byte[][] deltaBlock_23, long from, long to) {
+		for (int i = 0; i < 2; i++) {
+			for (long j = from; j < to; j++) {
+				if (fssout[i].get(j).byteValue() == 1) {
+					Util.setXor(WOM.get(j), deltaBlock_23[i]);
+				}
+			}
+		}
+	}
+
 	private void updateStashAndWOM(byte[][] block_23, byte[][] deltaBlock_23, Array64<Byte>[] fssout) {
 		byte[][] newBlock_23 = new byte[2][];
 		newBlock_23[0] = Util.xor(block_23[0], deltaBlock_23[0]);
 		newBlock_23[1] = Util.xor(block_23[1], deltaBlock_23[1]);
 
-		for (int i = 0; i < 2; i++) {
-			for (long j = 0; j < N; j++) {
-				if (fssout[i].get(j).byteValue() == 1) {
-					Util.setXor(WOM.get(j), deltaBlock_23[i]);
+		int numThreads = (int) Math.min(N, Global.numThreads);
+		if (numThreads < 2) {
+			for (int i = 0; i < 2; i++) {
+				for (long j = 0; j < N; j++) {
+					if (fssout[i].get(j).byteValue() == 1) {
+						Util.setXor(WOM.get(j), deltaBlock_23[i]);
+					}
+				}
+			}
+		} else {
+			Thread[] children = new Thread[numThreads - 1];
+			long segLen = N / numThreads;
+			for (int id = 0; id < children.length; id++) {
+				final int ID = id;
+				children[id] = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						selectXorForPIW(fssout, deltaBlock_23, ID * segLen, (ID + 1) * segLen);
+					}
+				});
+				children[id].start();
+			}
+			selectXorForPIW(fssout, deltaBlock_23, children.length * segLen, N);
+
+			for (int id = 0; id < children.length; id++) {
+				try {
+					children[id].join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}
@@ -315,7 +350,7 @@ public class DPFORAM {
 		}
 	}
 
-	private void threadedSelectXor(Array64<Byte>[] t, Array64<byte[]>[] mem_23, long from, long to, int threadId,
+	private void selectXorForPIR(Array64<Byte>[] t, Array64<byte[]>[] mem_23, long from, long to, int threadId,
 			byte[][] output) {
 		for (int i = 0; i < 2; i++) {
 			for (long j = from; j < to; j++) {
@@ -361,17 +396,18 @@ public class DPFORAM {
 				children[id] = new Thread(new Runnable() {
 					@Override
 					public void run() {
-						threadedSelectXor(t, mem_23, ID * segLen, (ID + 1) * segLen, ID, output);
+						selectXorForPIR(t, mem_23, ID * segLen, (ID + 1) * segLen, ID, output);
 					}
 				});
 				children[id].start();
 			}
-			threadedSelectXor(t, mem_23, children.length * segLen, N, children.length, output);
+			selectXorForPIR(t, mem_23, children.length * segLen, N, children.length, output);
 
 			for (int id = 0; id < children.length; id++) {
 				try {
 					children[id].join();
-				} catch (InterruptedException ignore) {
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 				Util.setXor(rec_13, output[id]);
 			}

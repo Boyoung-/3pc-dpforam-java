@@ -59,8 +59,8 @@ public class CLI {
 		String eddieIp = cmd.getOptionValue("eddie_ip", DEFAULT_IP);
 		String debbieIp = cmd.getOptionValue("debbie_ip", DEFAULT_IP);
 
-		String tau_string = cmd.getOptionValue("tau", "3");
-		String logN_string = cmd.getOptionValue("logN", "9");
+		String tau_string = cmd.getOptionValue("tau", "4");
+		String logN_string = cmd.getOptionValue("logN", "12");
 		String DBytes_string = cmd.getOptionValue("DBytes", "4");
 		String eachAddrIter_string = cmd.getOptionValue("addrIter", "10");
 		String threads_string = cmd.getOptionValue("threads", "1");
