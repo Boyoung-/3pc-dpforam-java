@@ -10,6 +10,7 @@ import crypto.Crypto;
 import util.Array64;
 import util.Util;
 
+// This is a local version (not secure computation) to just test oram algorithm correctness
 public class DPFORAMLocal {
 
 	public static final int prime = 251;

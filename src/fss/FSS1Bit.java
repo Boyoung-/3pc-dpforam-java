@@ -11,6 +11,7 @@ import util.Util;
 
 // TODO: how to parallelize EvalAll()?
 
+// 1-bit output DPF, with early-termination
 public class FSS1Bit {
 
 	int seedBytes;
@@ -40,6 +41,7 @@ public class FSS1Bit {
 		return res;
 	}
 
+	// DPF key gen
 	public FSSKey[] Gen(long alpha, int m) {
 		long mask = (1 << m) - 1;
 		alpha &= mask;
@@ -108,6 +110,7 @@ public class FSS1Bit {
 		return keys;
 	}
 
+	// DPF.Eval on a single point
 	public byte Eval(FSSKey key, long x, int m) {
 		long mask = (1 << m) - 1;
 		x &= mask;
@@ -140,10 +143,12 @@ public class FSS1Bit {
 		return t;
 	}
 
+	// DPF.Eval on whole domain
 	public Array64<Byte> EvalAll(FSSKey key, int m) {
 		return EvalAllWithShift(key, m, 0);
 	}
 
+	// DPF.Eval on whole domain s.t. output[i] = DPF.Eval(i xor shift)
 	public Array64<Byte> EvalAllWithShift(FSSKey key, int m, long shift) {
 		int old_m = m;
 		m = Math.max(1, m - ETBits);

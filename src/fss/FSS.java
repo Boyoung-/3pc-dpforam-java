@@ -7,6 +7,7 @@ import crypto.Crypto;
 import crypto.PRG;
 import util.Util;
 
+// |beta|-bit output DPF, no early-termination
 public class FSS {
 
 	int seedBytes;

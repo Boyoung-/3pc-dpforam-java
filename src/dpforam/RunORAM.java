@@ -14,6 +14,7 @@ import util.Util;
 
 public class RunORAM {
 
+	// oram access testing
 	public static void testAccess(int tau, int logN, int DBytes, int eachAddrIter, Party party, Communication[] cons) {
 		StopWatch timer = new StopWatch("Runtime");
 		Bandwidth bandwidth = new Bandwidth("Bandwidth");
@@ -21,6 +22,7 @@ public class RunORAM {
 		DPFORAM dpforam = new DPFORAM(tau, logN, DBytes, true, party, cons, bandwidth);
 		dpforam.printMetadata();
 
+		// sync all parties before test
 		byte[] zero = new byte[] { 0 };
 		cons[0].write(zero);
 		cons[1].write(zero);
@@ -33,13 +35,17 @@ public class RunORAM {
 			return;
 		}
 
+		// not test same address twice because of testing access = write
 		Set<Long> testedAddr = new HashSet<Long>();
 
 		for (int t = 0; t < numTestAddr; t++) {
+			// not count timing for the first address because JVM needs to warm up
 			if (t == 1)
 				timer.reset();
 
 			long addr = 0;
+			// generate a random addr to test, and let all parties know; this can be done
+			// with (2,3)-sharing, but here it's just for simplicity
 			if (party == Party.Eddie) {
 				addr = Util.nextLong(dpforam.N, Crypto.sr);
 				while (testedAddr.contains(addr))
@@ -54,12 +60,17 @@ public class RunORAM {
 			} else {
 			}
 
+			// expected payload = address % prime
 			BigInteger expected = BigInteger.valueOf(addr % DPFORAM.prime);
 
+			// test this many writes for the same address
 			for (int i = 0; i < eachAddrIter; i++) {
+				// only measure bandwidth once
 				if (i == 1)
 					Global.bandSwitch = false;
 
+				// new payload value for write; again for simplicity, can do (2,3)-sharing but
+				// not yet
 				BigInteger newVal = BigInteger.valueOf(Crypto.sr.nextInt(DPFORAM.prime));
 				if (party == Party.Eddie) {
 					cons[0].write(newVal);
@@ -75,10 +86,12 @@ public class RunORAM {
 				newRec[0] = Util.padArray(newVal.toByteArray(), dpforam.DBytes);
 				newRec[1] = newRec[0].clone();
 
+				// access = write
 				timer.start();
 				byte[][] rec_23 = dpforam.access(new long[] { addr, addr }, newRec, false);
 				timer.stop();
 
+				// verify correctness
 				if (party == Party.Eddie) {
 					byte[] rec = Util.xor(rec_23[0], rec_23[1]);
 					Util.setXor(rec, cons[0].read());
@@ -91,6 +104,7 @@ public class RunORAM {
 								+ expected.longValue() + ", output=" + output.longValue());
 					}
 
+					// need to change expected value because of write
 					expected = newVal;
 
 				} else if (party == Party.Debbie) {
@@ -104,6 +118,7 @@ public class RunORAM {
 		System.out.println("Test access() done.");
 		System.out.println();
 
+		// generate time and bandwidth output
 		cons[0].write(bandwidth);
 		cons[0].write(timer);
 		cons[1].write(bandwidth);
